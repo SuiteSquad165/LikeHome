@@ -36,10 +36,6 @@ public class UserService {
         userRepo.deleteAll();
     }
 
-    public List<User> findByUserID(String id) {
-        return userRepo.findByUserId(id);
-    }
-
     public List<User> findByEmail(String email){
         return userRepo.findByEmail(email);
     }
