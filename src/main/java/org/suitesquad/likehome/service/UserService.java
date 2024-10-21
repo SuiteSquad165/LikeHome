@@ -24,10 +24,6 @@ public class UserService {
         return userRepo.findAll();
     }
 
-    //public String fetchUserDataByName(String name) {
-    //    return userRepo.findByNameIgnoreCase(name);
-    //}
-
     public void deleteUserData(User userDetails) {
         userRepo.delete(userDetails);
     }
