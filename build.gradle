@@ -9,6 +9,11 @@ plugins {
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 defaultTasks 'bootRun'
 
+// Ensure the main class is defined here
+springBoot {
+    mainClass = 'org.suitesquad.likehome.RestApplication'
+}
+
 repositories {
     mavenCentral()
 }
