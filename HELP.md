@@ -36,7 +36,7 @@ Verify the Application:
 Open your browser and visit:
 
 ```
-http://localhost:8080/ping
+    http://localhost:8080/ping
 ```
 
 ### Additional Links
