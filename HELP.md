@@ -31,7 +31,7 @@ The following guides illustrate how to use some features concretely:
     docker-compose up --build
 ```
 
-Verify the Application:
+2. Verify the Application:
 
 Open your browser and visit:
 
