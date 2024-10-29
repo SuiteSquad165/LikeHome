@@ -27,9 +27,6 @@ public class User {
 
     private String firstName;
     private String lastName;
-    private String phoneNumber;
-    private LocalDate dateOfBirth;
 
-    private Address address;
     private List<BookingHistory> bookingHistory;
 }

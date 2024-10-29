@@ -12,14 +12,15 @@ import java.util.List;
 public class Reservation {
     @Id
     @Indexed(unique = true)
+    @Getter
     private String id;
 
-    @Getter
     //@Indexed
+    @Getter
     private String userId;
 
-    @Getter
     //@Indexed
+    @Getter
     private String hotelId;
 
     private List<RoomBooked> roomsBooked;

@@ -24,4 +24,5 @@ public class Hotel {
     private List<Room> rooms;
     private List<String> amenities;
     private List<Review> reviews;
+    private List<String> imageUrls;
 }
