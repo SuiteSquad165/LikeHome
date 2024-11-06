@@ -12,7 +12,7 @@ Linux/macOS:
 ./gradlew
 ```
 Windows:
-```
+```shell
 gradlew
 ```
 You should see `Started RestApplication...` in the output, which means the server is running.
@@ -36,3 +36,11 @@ IntelliJ:
 1. Open the Gradle tool window on the right side of the window, navigate to `Tasks` -> `verification` -> `test` and right-click test.
 2. Click on `Modify Run Configuration` and follow the same instructions with environment variables as for running the server.
 3. Ensure that `LikeHome [test]` is selected in the dropdown next to the play button, and click it to run tests.
+
+## Running with Docker
+
+```shell
+# Ensure you have the environment variables DB_URL and DB_NAME beforehand
+docker build -t likehome .
+docker run -e DB_URL -e DB_NAME -p 8080:8080 -d likehome
+```

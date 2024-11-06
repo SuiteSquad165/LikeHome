@@ -1,5 +1,5 @@
 # Use a base image with Java 21
-FROM azul/zulu-openjdk-debian:21 as build
+FROM azul/zulu-openjdk-debian:21 AS build
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -29,8 +29,6 @@ COPY --from=build /app/build/libs/LikeHome.jar LikeHome.jar
 
 # Expose the application port
 EXPOSE 8080
-
-ENV DB_URL=${DB_URL}
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "LikeHome.jar"]
