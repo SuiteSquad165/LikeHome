@@ -17,7 +17,7 @@ public class Reservation {
     @Indexed(unique = true)
     private String id;
 
-    //@Indexed
+    @Indexed
     private String userId;
 
     //@Indexed
