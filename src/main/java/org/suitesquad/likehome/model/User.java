@@ -14,7 +14,6 @@ import java.util.List;
 @Getter
 @Setter
 public class User {
-
     @Id
     @Indexed(unique = true)
     private String id;
@@ -24,6 +23,4 @@ public class User {
 
     private String firstName;
     private String lastName;
-
-    private List<Reservation> reservationHistory;
 }
