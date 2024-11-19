@@ -1,17 +1,22 @@
 package org.suitesquad.likehome.rest;
 
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.Hotel;
 import org.suitesquad.likehome.model.Reservation;
+import org.suitesquad.likehome.model.Room;
 import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.rest.RestTypes.Room;
+import org.suitesquad.likehome.rest.RestTypes.HotelInfo;
+import org.suitesquad.likehome.rest.RestTypes.RoomInfo;
 import org.suitesquad.likehome.service.HotelService;
 import org.suitesquad.likehome.service.ReservationService;
+import org.suitesquad.likehome.service.RoomService;
 import org.suitesquad.likehome.service.UserService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * This class handles all requests not requiring authentication.
@@ -28,12 +33,14 @@ public class PublicController {
     private final UserService userService;
     private final HotelService hotelService;
     private final ReservationService reservationService;
+    private final RoomService roomService;
 
     // Constructor injector
-    public PublicController(UserService userService, HotelService hotelService, ReservationService reservationService) {
+    public PublicController(UserService userService, HotelService hotelService, ReservationService reservationService, RoomService roomService) {
         this.userService = userService;
         this.hotelService = hotelService;
         this.reservationService = reservationService;
+        this.roomService = roomService;
     }
 
     @GetMapping("/userdb")
@@ -55,14 +62,106 @@ public class PublicController {
      * Retrieve a list of all rooms with optional filters.
      * @param filters a set of filters to apply to the room search (for example, type=apartment)
      */
-    @GetMapping("/rooms")
-    public List<Room> getAllRooms(@RequestParam(required = false) Map<String, String> filters) {
-        return List.of(Room.sample);
+    @GetMapping("/hotels")
+    public List<HotelInfo> getAllHotels(@RequestBody(required = false) Map<String, Object> filters) {
+        List<HotelInfo> hotels = new ArrayList<>();
+
+        Query query = new Query();
+        for (String key : filters.keySet()) {
+            System.out.println(key + ": " + filters.get(key));
+            query.addCriteria(Criteria.where(key).is(filters.get(key)));
+        }
+
+        List<Hotel> fetchedHotelsQuery = hotelService.findAllByQuery(query);
+        for (Hotel hotel : fetchedHotelsQuery) {
+            hotels.add(new HotelInfo(
+                    hotel.getId(),
+                    hotel.getName(),
+                    hotel.getDescription(),
+                    hotel.getRating(),
+                    hotel.getReviews().size(),
+                    hotel.getLocation().getCity(),
+                    hotel.getImageUrls(),
+                    hotel.getRoomIds()
+            ));
+        }
+
+        return hotels;
     }
 
-    @GetMapping("/rooms/{roomId}")
-    public Room getRoomById(@PathVariable String roomId) {
-        return Stream.of(Room.sample).filter(r -> r.id().equals(roomId)).findAny().orElseThrow();
+    @GetMapping("/hotels/{hotelId}")
+    public HotelInfo getHotelById(@PathVariable String hotelId,
+                                  @RequestParam(required = false) Map<String, String> filters) {
+        HotelInfo hotelInfo;
+
+        Hotel hotel = hotelService.findById(hotelId);
+        if(hotel == null) {
+            throw new RuntimeException("Hotel '" + hotelId + "' not found");
+        }
+
+        hotelInfo = new HotelInfo(
+                hotel.getId(),
+                hotel.getName(),
+                hotel.getDescription(),
+                hotel.getRating(),
+                hotel.getReviews().size(),
+                hotel.getLocation().getCity(),
+                hotel.getImageUrls(),
+                hotel.getRoomIds());
+
+        return hotelInfo;
     }
 
+    @GetMapping("/hotels/{hotelId}/rooms")
+    public List<RoomInfo> getHotelRooms(@PathVariable String hotelId,
+                                        @RequestParam(required = false) Map<String, String> filters) {
+        List<RoomInfo> rooms = new ArrayList<>();
+
+        Hotel hotel = hotelService.findById(hotelId);
+        if(hotel == null) {
+            throw new RuntimeException("Hotel '" + hotelId + "' not found");
+        }
+
+        List<Room> fetchedRooms = roomService.findByHotelId(hotelId);
+
+        for (Room room : fetchedRooms) {
+            rooms.add(new RoomInfo(
+                    room.getId(),
+                    room.getRoomType(),
+                    room.getPrice(),
+                    room.getRating(),
+                    room.getFeatures(),
+                    room.getImageUrls()
+            ));
+        }
+
+        return rooms;
+    }
+
+    @GetMapping("/hotels/{hotelId}/rooms/{roomId}")
+    public RoomInfo getHotelRoomById(@PathVariable String hotelId, @PathVariable String roomId,
+                                     @RequestParam(required = false) Map<String, String> filters) {
+        RoomInfo room;
+
+        Hotel hotel = hotelService.findById(hotelId);
+        if(hotel == null) {
+            throw new RuntimeException("Hotel '" + hotelId + "' not found");
+        }
+
+        Room fetchedRoom = roomService.findById(roomId).isPresent() ? roomService.findById(roomId).get() : null;
+        if(fetchedRoom == null) {
+            throw new RuntimeException("Room '" + roomId + "' not found");
+        }
+
+        room = new RoomInfo(
+                fetchedRoom.getId(),
+                fetchedRoom.getRoomType(),
+                fetchedRoom.getPrice(),
+                fetchedRoom.getRating(),
+                fetchedRoom.getFeatures(),
+                fetchedRoom.getImageUrls()
+        );
+
+        return room;
+    }
 }

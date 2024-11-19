@@ -23,6 +23,9 @@ public class Reservation {
     //@Indexed
     private String hotelId;
 
+    //@Indexed
+    private String roomId;
+
     private List<RoomBooked> roomsBooked;
     private Date checkIn;
     private Date checkOut;

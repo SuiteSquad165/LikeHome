@@ -22,8 +22,9 @@ public class Hotel {
     private double rating;
     private Location location;
     private ContactInfo contactInfo;
-    private List<Room> rooms;
+    private List<String> roomIds;
     private List<String> amenities;
+    private List<Review> reviews;
     private List<String> imageUrls;
 
     @Getter

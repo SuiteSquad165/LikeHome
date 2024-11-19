@@ -3,15 +3,15 @@ package org.suitesquad.likehome.rest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.rest.RestTypes.Reservation;
+import org.suitesquad.likehome.rest.RestTypes.ReservationInfo;
 import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
+import org.suitesquad.likehome.service.ReservationService;
 import org.suitesquad.likehome.service.UserService;
 
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.stream.Stream;
+import java.time.ZoneId;
+import java.util.*;
 
 /**
  * This class handles all authenticated requests.
@@ -21,8 +21,9 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping("/auth")
 public class AuthenticatedController {
-    
+
     @Autowired private UserService userService;
+    @Autowired private ReservationService reservationService;
 
     /**
      * Creates a user in the database with the email and name from the SignUpInfo object
@@ -55,16 +56,44 @@ public class AuthenticatedController {
      * Get the reservations for this user.
      */
     @GetMapping(path = "/reservations")
-    public List<Reservation> getReservations(JwtAuthenticationToken token) {
-        return List.of(Reservation.sample);
+    public List<ReservationInfo> getReservations(JwtAuthenticationToken token) {
+        List<ReservationInfo> reservations = new ArrayList<>();
+        System.out.println(getUserID(token));
+        List<Reservation> reservationList = reservationService.findByUserId(getUserID(token));
+        for(Reservation reservation : reservationList) {
+            reservations.add(new ReservationInfo(
+                    reservation.getId(),
+                    reservation.getHotelId(),
+                    reservation.getUserId(),
+                    reservation.getRoomId(),
+                    reservation.getCheckIn().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                    reservation.getCheckOut().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
+        }
+
+        return reservations;
     }
 
     /**
      * Get a specific reservation for this user by ID.
      */
     @GetMapping(path = "/reservations/{reservationId}")
-    public Reservation getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
-        return Stream.of(Reservation.sample).filter(r -> r.id().equals(reservationId)).findAny().orElseThrow();
+    public ReservationInfo getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
+        ReservationInfo reservationInfo;
+
+        Reservation reservation = reservationService.findById(reservationId).isPresent() ? reservationService.findById(reservationId).get() : null;
+        if(reservation == null) {
+            throw new RuntimeException("Reservation '" + reservationId + "' does not exist!");
+        }
+
+        reservationInfo = new ReservationInfo(
+                reservation.getId(),
+                reservation.getHotelId(),
+                reservation.getUserId(),
+                reservation.getRoomId(),
+                reservation.getCheckIn().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                reservation.getCheckOut().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+
+        return reservationInfo;
     }
 
     /**
@@ -73,8 +102,16 @@ public class AuthenticatedController {
      * Instead, the id is generated and assigned, and the user ID is retrieved from the token.
      */
     @PostMapping(path = "/reservations")
-    public void createReservation(JwtAuthenticationToken token, @RequestBody Reservation reservation) {
+    public void createReservation(JwtAuthenticationToken token, @RequestBody ReservationInfo reservationInfo) {
+        Reservation reservationDetails = new Reservation();
 
+        reservationDetails.setHotelId(reservationInfo.hotelId());
+        reservationDetails.setUserId(reservationInfo.userId());
+        reservationDetails.setRoomId(reservationInfo.roomId());
+        reservationDetails.setCheckIn(Date.from(reservationInfo.checkInDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        reservationDetails.setCheckOut(Date.from(reservationInfo.checkOutDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+
+        reservationService.addReservationData(reservationDetails);
     }
 
     /**
