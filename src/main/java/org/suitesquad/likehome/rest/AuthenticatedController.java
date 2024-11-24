@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.User;
+import org.suitesquad.likehome.rest.RestTypes.ChatMessage;
 import org.suitesquad.likehome.rest.RestTypes.Reservation;
 import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
 import org.suitesquad.likehome.service.UserService;
@@ -75,6 +76,15 @@ public class AuthenticatedController {
     @PostMapping(path = "/reservations")
     public void createReservation(JwtAuthenticationToken token, @RequestBody Reservation reservation) {
 
+    }
+
+    /**
+     * Respond to a user's chat message with a response from an AI assistant.
+     * @param messageHistory the chat history between the user and the chatbot with the latest message at the end
+     */
+    @PostMapping(path = "/chat")
+    public String chat(JwtAuthenticationToken token, @RequestBody List<ChatMessage> messageHistory) {
+        return "Hello! How can I help you today?";
     }
 
     /**

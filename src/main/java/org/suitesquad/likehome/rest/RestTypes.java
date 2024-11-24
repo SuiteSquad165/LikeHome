@@ -30,4 +30,10 @@ public class RestTypes {
         };
     }
 
+    public record ChatMessage(Sender sender, String content) {
+         enum Sender {
+            USER, ASSISTANT
+        }
+    }
+
 }
