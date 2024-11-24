@@ -30,6 +30,8 @@ public class RestTypes {
         };
     }
 
+    public record ReviewInfo(double rating, String comment) {}
+
     public record ChatMessage(Sender sender, String content) {
          enum Sender {
             USER, ASSISTANT

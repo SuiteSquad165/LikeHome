@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.User;
 import org.suitesquad.likehome.rest.RestTypes.ChatMessage;
 import org.suitesquad.likehome.rest.RestTypes.Reservation;
+import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
 import org.suitesquad.likehome.service.UserService;
 
@@ -75,6 +76,15 @@ public class AuthenticatedController {
      */
     @PostMapping(path = "/reservations")
     public void createReservation(JwtAuthenticationToken token, @RequestBody Reservation reservation) {
+
+    }
+
+    /**
+     * Add a review for a hotel. Updates an existing review if the user already reviewed the hotel.
+     * Error if user has not stayed at the hotel.
+     */
+    @PutMapping(path = "/review/{hotelId}")
+    public void reviewHotel(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo review) {
 
     }
 
