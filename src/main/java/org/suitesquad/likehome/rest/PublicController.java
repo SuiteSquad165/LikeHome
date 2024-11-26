@@ -64,7 +64,7 @@ public class PublicController {
     public List<HotelInfo> getAllHotels(@RequestBody(required = false) Map<String, Object> filters) {
         List<HotelInfo> hotels = new ArrayList<>();
 
-        // 0 = default, 1 = rating, 2 = price
+        // 0 = default, 1 = rating
         int sort = 0;
 
         Query query = new Query();
@@ -73,7 +73,6 @@ public class PublicController {
             {
                 sort = switch ((String) filters.get(key)) {
                     case "rating" -> 1;
-                    case "price" -> 2;
                     default -> 0;
                 };
             }
@@ -135,7 +134,28 @@ public class PublicController {
             throw new RuntimeException("Hotel '" + hotelId + "' not found");
         }
 
+        // 0 = default, 1 = rating, 2 = price
+        int sort = 0;
+
+        for (String key : filters.keySet()) {
+            if(key.equalsIgnoreCase("sort"))
+            {
+                sort = switch ((String) filters.get(key)) {
+                    case "rating" -> 1;
+                    case "price" -> 2;
+                    default -> 0;
+                };
+            }
+        }
+
         List<Room> fetchedRooms = roomService.findByHotelId(hotelId);
+
+        if(sort == 1) {
+            fetchedRooms.sort(Comparator.comparingDouble(Room::getRating).reversed());
+        } else if(sort == 2)
+        {
+            fetchedRooms.sort(Comparator.comparingDouble(Room::getPrice));
+        }
 
         for (Room room : fetchedRooms) {
             rooms.add(new RoomInfo(
