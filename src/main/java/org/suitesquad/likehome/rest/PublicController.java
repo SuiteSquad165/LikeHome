@@ -14,9 +14,7 @@ import org.suitesquad.likehome.service.ReservationService;
 import org.suitesquad.likehome.service.RoomService;
 import org.suitesquad.likehome.service.UserService;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class handles all requests not requiring authentication.
@@ -66,13 +64,28 @@ public class PublicController {
     public List<HotelInfo> getAllHotels(@RequestBody(required = false) Map<String, Object> filters) {
         List<HotelInfo> hotels = new ArrayList<>();
 
+        // 0 = default, 1 = rating, 2 = price
+        int sort = 0;
+
         Query query = new Query();
         for (String key : filters.keySet()) {
-            System.out.println(key + ": " + filters.get(key));
+            if(key.equalsIgnoreCase("sort"))
+            {
+                sort = switch ((String) filters.get(key)) {
+                    case "rating" -> 1;
+                    case "price" -> 2;
+                    default -> 0;
+                };
+            }
             query.addCriteria(Criteria.where(key).is(filters.get(key)));
         }
 
         List<Hotel> fetchedHotelsQuery = hotelService.findAllByQuery(query);
+
+        if(sort == 1) {
+            fetchedHotelsQuery.sort(Comparator.comparingDouble(Hotel::getRating).reversed());
+        }
+
         for (Hotel hotel : fetchedHotelsQuery) {
             hotels.add(new HotelInfo(
                     hotel.getId(),
