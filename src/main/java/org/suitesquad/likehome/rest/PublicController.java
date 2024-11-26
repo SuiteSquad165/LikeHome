@@ -7,8 +7,6 @@ import org.suitesquad.likehome.model.Hotel;
 import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.model.Room;
 import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.rest.RestTypes.HotelInfo;
-import org.suitesquad.likehome.rest.RestTypes.RoomInfo;
 import org.suitesquad.likehome.service.HotelService;
 import org.suitesquad.likehome.service.ReservationService;
 import org.suitesquad.likehome.service.RoomService;
