@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.model.User;
 import org.suitesquad.likehome.rest.RestTypes.ReservationInfo;
+import org.suitesquad.likehome.rest.RestTypes.ChatMessage;
+import org.suitesquad.likehome.rest.RestTypes.Reservation;
+import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
 import org.suitesquad.likehome.service.ReservationService;
 import org.suitesquad.likehome.service.UserService;
@@ -118,6 +121,24 @@ public class AuthenticatedController {
             User user = user_optional.get();
             userService.updateUserPoints(reservationInfo.userId(), user.getPoints() + 10);
         }
+    }
+
+    /**
+     * Add a review for a hotel. Updates an existing review if the user already reviewed the hotel.
+     * Error if user has not stayed at the hotel.
+     */
+    @PutMapping(path = "/review/{hotelId}")
+    public void reviewHotel(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo review) {
+
+    }
+
+    /**
+     * Respond to a user's chat message with a response from an AI assistant.
+     * @param messageHistory the chat history between the user and the chatbot with the latest message at the end
+     */
+    @PostMapping(path = "/chat")
+    public String chat(JwtAuthenticationToken token, @RequestBody List<ChatMessage> messageHistory) {
+        return "Hello! How can I help you today?";
     }
 
     /**

@@ -20,7 +20,14 @@ public class RestTypes {
 
     }
 
-    public record ReservationInfo(String id, String hotelId, String userId, String roomId, LocalDate checkInDate, LocalDate checkOutDate)
-    {
+    public record ReservationInfo(String id, String hotelId, String userId, String roomId, LocalDate checkInDate, LocalDate checkOutDate) {
+    }
+
+    public record ReviewInfo(double rating, String comment) {}
+
+    public record ChatMessage(Sender sender, String content) {
+         enum Sender {
+            USER, ASSISTANT
+        }
     }
 }
