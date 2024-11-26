@@ -29,16 +29,6 @@ public class Hotel {
 
     @Getter
     @Setter
-    public static class Room {
-        private String roomType;
-        private double price;   // price per night
-        private int availability;
-        private List<String> features;
-        private String imageUrl;
-    }
-
-    @Getter
-    @Setter
     static public class ContactInfo {
         private String phone;
         private String email;

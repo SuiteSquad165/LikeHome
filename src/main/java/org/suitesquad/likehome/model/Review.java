@@ -16,9 +16,6 @@ public class Review {
     private String id;  // Review ID
 
     private String userId;
-
-    @Indexed
-    private String hotelId;
     private String contents;
     private double rating;
     private LocalDateTime reviewDate;
