@@ -30,7 +30,7 @@ public class Reservation {
     private Date checkIn;
     private Date checkOut;
     private double totalPrice;
-    private String status;
+    private boolean status;
     private Date bookingDate;
     private Payment payment;
     private CancellationPolicy cancellationPolicy;

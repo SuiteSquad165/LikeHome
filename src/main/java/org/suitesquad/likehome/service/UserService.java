@@ -40,4 +40,14 @@ public class UserService {
     public Optional<User> findById(String id) {
         return userRepo.findById(id);
     }
+
+    public void updateUserPoints(String id, int points)
+    {
+        Optional<User> user_optional = userRepo.findById(id);
+        if(user_optional.isPresent()) {
+            User user = user_optional.get();
+            user.setPoints(points);
+            userRepo.save(user);
+        }
+    }
 }

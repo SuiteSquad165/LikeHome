@@ -112,6 +112,12 @@ public class AuthenticatedController {
         reservationDetails.setCheckOut(Date.from(reservationInfo.checkOutDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
 
         reservationService.addReservationData(reservationDetails);
+
+        Optional<User> user_optional = userService.findById(reservationInfo.userId());
+        if(user_optional.isPresent()) {
+            User user = user_optional.get();
+            userService.updateUserPoints(reservationInfo.userId(), user.getPoints() + 10);
+        }
     }
 
     /**
