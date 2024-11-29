@@ -6,6 +6,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.suitesquad.likehome.model.Hotel;
+import org.suitesquad.likehome.model.User;
 import org.suitesquad.likehome.repository.HotelRepository;
 
 import java.util.List;
@@ -60,6 +61,15 @@ public class HotelService {
 
     public List<Hotel> findAllByQuery(Query query) {
         return hotelRepo.find(query, Hotel.class);
+    }
+
+    public void updateReviewCount(String id, int reviewCount)
+    {
+        Hotel hotel = findById(id);
+        if(hotel != null) {
+            hotel.setReviewCount(reviewCount);
+            hotelRepo.save(hotel);
+        }
     }
 
     /*
