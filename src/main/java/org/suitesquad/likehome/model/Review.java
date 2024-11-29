@@ -1,6 +1,7 @@
 package org.suitesquad.likehome.model;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -15,8 +16,9 @@ public class Review {
     @Id
     private String id;  // Review ID
 
+    private String hotelId;
     private String userId;
     private String contents;
     private double rating;
-    private LocalDateTime reviewDate;
+    private Date reviewDate;
 }

@@ -24,7 +24,7 @@ public class Hotel {
     private ContactInfo contactInfo;
     private List<String> roomIds;
     private List<String> amenities;
-    private List<Review> reviews;
+    private int reviewCount;
     private List<String> imageUrls;
 
     @Getter

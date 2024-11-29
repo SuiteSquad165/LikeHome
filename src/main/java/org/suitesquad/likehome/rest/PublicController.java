@@ -3,14 +3,9 @@ package org.suitesquad.likehome.rest;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.bind.annotation.*;
-import org.suitesquad.likehome.model.Hotel;
-import org.suitesquad.likehome.model.Reservation;
-import org.suitesquad.likehome.model.Room;
-import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.service.HotelService;
-import org.suitesquad.likehome.service.ReservationService;
-import org.suitesquad.likehome.service.RoomService;
-import org.suitesquad.likehome.service.UserService;
+import org.suitesquad.likehome.model.*;
+import org.suitesquad.likehome.service.*;
+import org.suitesquad.likehome.rest.RestTypes.*;
 
 import java.util.*;
 
@@ -30,13 +25,15 @@ public class PublicController {
     private final HotelService hotelService;
     private final ReservationService reservationService;
     private final RoomService roomService;
+    private final ReviewService reviewService;
 
     // Constructor injector
-    public PublicController(UserService userService, HotelService hotelService, ReservationService reservationService, RoomService roomService) {
+    public PublicController(UserService userService, HotelService hotelService, ReservationService reservationService, RoomService roomService, ReviewService reviewService) {
         this.userService = userService;
         this.hotelService = hotelService;
         this.reservationService = reservationService;
         this.roomService = roomService;
+        this.reviewService = reviewService;
     }
 
     @GetMapping("/userdb")
@@ -89,7 +86,7 @@ public class PublicController {
                     hotel.getName(),
                     hotel.getDescription(),
                     hotel.getRating(),
-                    hotel.getReviews().size(),
+                    hotel.getReviewCount(),
                     hotel.getLocation().getCity(),
                     hotel.getImageUrls(),
                     hotel.getRoomIds()
@@ -114,7 +111,7 @@ public class PublicController {
                 hotel.getName(),
                 hotel.getDescription(),
                 hotel.getRating(),
-                hotel.getReviews().size(),
+                hotel.getReviewCount(),
                 hotel.getLocation().getCity(),
                 hotel.getImageUrls(),
                 hotel.getRoomIds());
@@ -194,5 +191,30 @@ public class PublicController {
         );
 
         return room;
+    }
+
+    @GetMapping("/hotels/{hotelId}/reviews")
+    public List<ReviewInfo> getReviewByHotelId(@PathVariable String hotelId)
+    {
+        List<ReviewInfo> reviewInfos = new ArrayList<>();
+
+        Hotel hotel = hotelService.findById(hotelId);
+        if(hotel == null) {
+            throw new RuntimeException("Hotel '" + hotelId + "' not found");
+        }
+
+        List<Review> reviews = reviewService.findByHotelId(hotel.getId());
+
+        for(Review review : reviews) {
+            reviewInfos.add(new ReviewInfo(
+               review.getId(),
+               review.getUserId(),
+               review.getContents(),
+               review.getRating(),
+               review.getReviewDate()
+            ));
+        }
+
+        return reviewInfos;
     }
 }

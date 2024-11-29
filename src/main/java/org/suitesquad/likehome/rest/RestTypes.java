@@ -1,6 +1,7 @@
 package org.suitesquad.likehome.rest;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,10 +21,10 @@ public class RestTypes {
 
     }
 
-    public record ReservationInfo(String id, String hotelId, String userId, String roomId, LocalDate checkInDate, LocalDate checkOutDate) {
+    public record ReservationInfo(String id, String hotelId, String userId, String roomId, Date checkInDate, Date checkOutDate) {
     }
 
-    public record ReviewInfo(double rating, String comment) {}
+    public record ReviewInfo(String id, String userId, String contents, double rating, Date reviewDate) {}
 
     public record ChatMessage(Sender sender, String content) {
          enum Sender {

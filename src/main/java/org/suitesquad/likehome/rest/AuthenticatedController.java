@@ -7,7 +7,6 @@ import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.model.User;
 import org.suitesquad.likehome.rest.RestTypes.ReservationInfo;
 import org.suitesquad.likehome.rest.RestTypes.ChatMessage;
-import org.suitesquad.likehome.rest.RestTypes.Reservation;
 import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
 import org.suitesquad.likehome.service.ReservationService;
@@ -69,8 +68,8 @@ public class AuthenticatedController {
                     reservation.getHotelId(),
                     reservation.getUserId(),
                     reservation.getRoomId(),
-                    reservation.getCheckIn().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
-                    reservation.getCheckOut().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()));
+                    reservation.getCheckIn(),
+                    reservation.getCheckOut()));
         }
 
         return reservations;
@@ -93,8 +92,8 @@ public class AuthenticatedController {
                 reservation.getHotelId(),
                 reservation.getUserId(),
                 reservation.getRoomId(),
-                reservation.getCheckIn().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
-                reservation.getCheckOut().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+                reservation.getCheckIn(),
+                reservation.getCheckOut());
 
         return reservationInfo;
     }
@@ -111,8 +110,8 @@ public class AuthenticatedController {
         reservationDetails.setHotelId(reservationInfo.hotelId());
         reservationDetails.setUserId(reservationInfo.userId());
         reservationDetails.setRoomId(reservationInfo.roomId());
-        reservationDetails.setCheckIn(Date.from(reservationInfo.checkInDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        reservationDetails.setCheckOut(Date.from(reservationInfo.checkOutDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        reservationDetails.setCheckIn(reservationInfo.checkInDate());
+        reservationDetails.setCheckOut(reservationInfo.checkOutDate());
 
         reservationService.addReservationData(reservationDetails);
 
