@@ -28,5 +28,9 @@ class RestApplicationTests {
                 .andExpect(content().string("pong"));
     }
 
-
+    @Test
+    void userDb() throws Exception {
+        mockMvc.perform(get("/userdb"))
+                .andExpect(status().isOk());
+    }
 }

@@ -30,30 +30,13 @@ import java.util.Map;
 @Tag(name = "Public", description = "No Authentication Required.")
 public class PublicController {
 
-    @Autowired private UserService userService;
     @Autowired private HotelService hotelService;
-    @Autowired private ReservationService reservationService;
     @Autowired private RoomService roomService;
     @Autowired private ReviewService reviewService;
 
     @GetMapping("/ping")
     public String ping() {
         return "pong";
-    }
-
-    @GetMapping("/userdb")
-    public List<User> userDb() {
-        return userService.fetchAllUserData();
-    }
-
-    @GetMapping("/hoteldb")
-    public List<Hotel> hotelDb() {
-        return hotelService.fetchAllHotelData();
-    }
-
-    @GetMapping("/reservedb")
-    public List<Reservation> reservationDb() {
-        return reservationService.fetchAllReservationData();
     }
 
     /**
@@ -143,23 +126,18 @@ public class PublicController {
             fetchedRooms.sort(Comparator.comparingDouble(Room::getPricePerNight));
         }
 
-        var rooms = new ArrayList<RoomInfo>();
-        for (Room room : fetchedRooms) {
-            rooms.add(new RoomInfo(
-                    room.getId(),
-                    room.getName(),
-                    room.getBaths(),
-                    room.getBeds(),
-                    room.getGuests(),
-                    room.getBedrooms(),
-                    room.getDescription(),
-                    room.getPricePerNight(),
-                    room.getAmenities(),
-                    room.getImageUrls()
-            ));
-        }
-
-        return rooms;
+        return fetchedRooms.stream().map(room -> new RoomInfo(
+                room.getId(),
+                room.getName(),
+                room.getBaths(),
+                room.getBeds(),
+                room.getGuests(),
+                room.getBedrooms(),
+                room.getDescription(),
+                room.getPricePerNight(),
+                room.getAmenities(),
+                room.getImageUrls()
+        )).toList();
     }
 
     @GetMapping("/hotels/{hotelId}/rooms/{roomId}")

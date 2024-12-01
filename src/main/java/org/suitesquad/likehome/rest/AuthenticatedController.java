@@ -8,10 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.model.Review;
 import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.rest.RestTypes.ChatMessage;
-import org.suitesquad.likehome.rest.RestTypes.ReservationInfo;
-import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
-import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
+import org.suitesquad.likehome.rest.RestTypes.*;
 import org.suitesquad.likehome.service.HotelService;
 import org.suitesquad.likehome.service.ReservationService;
 import org.suitesquad.likehome.service.ReviewService;
@@ -85,15 +82,20 @@ public class AuthenticatedController {
 
     /**
      * Create a reservation for this user.
-     * The reservation.id field and reservation.userID fields are ignored.
-     * Instead, the id is generated and assigned, and the user ID is retrieved from the token.
      * <p>
      * TODO: verify payment and that the room is available
      *
      * @return the created reservation's ID
      */
     @PostMapping(path = "/reservations")
-    public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationInfo reservationInfo) {
+    public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationRequest reservationInfo) {
+        reservationService.findByUserId(getUserID(token)).stream()
+                .filter(reservation -> reservation.getCheckIn().before(reservationInfo.checkOutDate()) &&
+                        reservation.getCheckOut().after(reservationInfo.checkInDate()))
+                .findAny().ifPresent(reservation -> {
+                    throw new RuntimeException("User already has a reservation for this time period");
+                });
+
         var reservationDetails = new Reservation();
         reservationDetails.setUserId(getUserID(token));
         reservationDetails.setHotelId(reservationInfo.hotelId());
@@ -114,7 +116,7 @@ public class AuthenticatedController {
      * Get a specific reservation for this user by ID.
      */
     @GetMapping(path = "/reservations/{reservationId}")
-    public RestTypes.ReservationInfo getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
+    public ReservationInfo getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
         Reservation reservation = reservationService.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' does not exist!"));
 
@@ -122,7 +124,7 @@ public class AuthenticatedController {
             throw new AccessDeniedException("Reservation '" + reservationId + "' does not belong to this user!");
         }
 
-        return new RestTypes.ReservationInfo(
+        return new ReservationInfo(
                 reservation.getId(),
                 reservation.getHotelId(),
                 reservation.getUserId(),
