@@ -58,6 +58,10 @@ public class HotelService {
         return hotelRepo.find(query, Hotel.class);
     }
 
+    public List<Hotel> findAll() {
+        return hotelRepo.findAll(Hotel.class);
+    }
+
     /*
     public List<Hotel> findAboveRating(double rating){
         return hotelRepo.findAboveRating(rating);

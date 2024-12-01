@@ -3,14 +3,16 @@ package org.suitesquad.likehome.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.bind.annotation.*;
-import org.suitesquad.likehome.model.*;
+import org.suitesquad.likehome.model.Hotel;
+import org.suitesquad.likehome.model.Review;
+import org.suitesquad.likehome.model.Room;
 import org.suitesquad.likehome.rest.RestTypes.HotelInfo;
 import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.rest.RestTypes.RoomInfo;
-import org.suitesquad.likehome.service.*;
+import org.suitesquad.likehome.service.HotelService;
+import org.suitesquad.likehome.service.ReviewService;
+import org.suitesquad.likehome.service.RoomService;
 
 import java.io.IOException;
 import java.net.URI;
@@ -21,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * This class handles all requests not requiring authentication.
@@ -45,7 +50,7 @@ public class PublicController {
     @PostMapping("/token")
     public String getToken(@RequestBody TokenRequest request) throws IOException, InterruptedException {
         var httpRequest = HttpRequest.newBuilder(URI.create(
-                "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + request.firebaseApiKey()))
+                        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + request.firebaseApiKey()))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString("""
                         { "email": "%s", "password": "%s", "returnSecureToken": true }
@@ -61,39 +66,47 @@ public class PublicController {
     public record TokenRequest(String firebaseApiKey, String email, String password) {}
 
     /**
-     * Retrieve a list of all rooms with optional filters.
+     * Retrieve a list of all hotels with optional sort by rating. All filters are case-insensitive.
      *
-     * @param filters a set of filters to apply to the room search (for example, type=apartment)
+     * @param sort     Sort by rating if "rating" is passed
+     * @param location city, state, or country contains
+     * @param name     hotel name contains
+     * @param rating   minimum rating
      */
     @GetMapping("/hotels")
-    public List<HotelInfo> getAllHotels(@RequestBody(required = false) Map<String, Object> filters) {
-        var query = new Query();
-        for (String key : filters.keySet()) {
-            query.addCriteria(Criteria.where(key).is(filters.get(key)));
+    public List<HotelInfo> getAllHotels(@RequestParam(required = false) String sort,
+                                        @RequestParam(required = false) String location,
+                                        @RequestParam(required = false) String name,
+                                        @RequestParam(required = false) Double rating) {
+        var hotels = hotelService.findAll().stream();
+
+        if ("rating".equalsIgnoreCase(sort)) {
+            hotels = hotels.sorted(Comparator.comparingDouble(Hotel::getRating).reversed());
+        }
+        if (isNotBlank(location)) {
+            hotels = hotels.filter(hotel ->
+                    containsIgnoreCase(hotel.getLocation().getCity(), location)
+                    || containsIgnoreCase(hotel.getLocation().getState(), location)
+                    || containsIgnoreCase(hotel.getLocation().getCountry(), location)
+            );
+        }
+        if (isNotBlank(name)) {
+            hotels = hotels.filter(hotel -> containsIgnoreCase(hotel.getName(), name));
+        }
+        if (rating != null && rating > 0) {
+            hotels = hotels.filter(hotel -> hotel.getRating() >= rating);
         }
 
-        List<Hotel> fetchedHotelsQuery = hotelService.findAllByQuery(query);
-
-        if ("rating".equals(filters.get("sort"))) {
-            fetchedHotelsQuery.sort(Comparator.comparingDouble(Hotel::getRating).reversed());
-        }
-
-        var hotels = new ArrayList<HotelInfo>();
-        for (Hotel hotel : fetchedHotelsQuery) {
-            var roomIds = roomService.findByHotelId(hotel.getId()).stream().map(Room::getId).toList();
-            hotels.add(new HotelInfo(
-                    hotel.getId(),
-                    hotel.getName(),
-                    hotel.getDescription(),
-                    hotel.getRating(),
-                    reviewService.findByHotelId(hotel.getId()).size(),
-                    hotel.getLocation().getCity(),
-                    hotel.getImageUrls(),
-                    roomIds
-            ));
-        }
-
-        return hotels;
+        return hotels.map(hotel -> new HotelInfo(
+                hotel.getId(),
+                hotel.getName(),
+                hotel.getDescription(),
+                hotel.getRating(),
+                reviewService.findByHotelId(hotel.getId()).size(),
+                hotel.getLocation().getCity(),
+                hotel.getImageUrls(),
+                roomService.findByHotelId(hotel.getId()).stream().map(Room::getId).toList()
+        )).toList();
     }
 
     @GetMapping("/hotels/{hotelId}")
