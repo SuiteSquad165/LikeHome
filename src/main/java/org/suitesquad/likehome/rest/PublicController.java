@@ -1,6 +1,7 @@
 package org.suitesquad.likehome.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -26,6 +27,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping
+@Tag(name = "Public", description = "No Authentication Required.")
 public class PublicController {
 
     @Autowired private UserService userService;

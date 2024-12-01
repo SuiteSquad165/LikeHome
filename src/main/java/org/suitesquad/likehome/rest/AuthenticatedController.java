@@ -1,6 +1,8 @@
 package org.suitesquad.likehome.rest;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.Reservation;
@@ -19,11 +21,12 @@ import java.util.*;
 
 /**
  * This class handles all authenticated requests.
- * Authenticated means the user has a valid JWT token.
+ * Authenticated means the user has a valid JWT.
  * Any user that is authenticated can access these endpoints.
  */
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authenticated", description = "Any user that is authenticated (valid JWT) can access these endpoints.")
 public class AuthenticatedController {
 
     @Autowired private UserService userService;
@@ -105,6 +108,27 @@ public class AuthenticatedController {
         );
 
         return id;
+    }
+
+    /**
+     * Get a specific reservation for this user by ID.
+     */
+    @GetMapping(path = "/reservations/{reservationId}")
+    public RestTypes.ReservationInfo getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
+        Reservation reservation = reservationService.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' does not exist!"));
+
+        if (!reservation.getUserId().equals(getUserID(token))) {
+            throw new AccessDeniedException("Reservation '" + reservationId + "' does not belong to this user!");
+        }
+
+        return new RestTypes.ReservationInfo(
+                reservation.getId(),
+                reservation.getHotelId(),
+                reservation.getUserId(),
+                reservation.getRoomId(),
+                reservation.getCheckIn(),
+                reservation.getCheckOut());
     }
 
     /**
