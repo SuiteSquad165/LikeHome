@@ -21,6 +21,7 @@ public class Room {
     private int baths;
     private int beds;
     private int guests;
+    private int bedrooms;
     private String description;
     private double pricePerNight;
     private int availability;
