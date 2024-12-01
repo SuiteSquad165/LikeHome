@@ -1,5 +1,6 @@
 package org.suitesquad.likehome.rest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -10,6 +11,11 @@ import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.rest.RestTypes.RoomInfo;
 import org.suitesquad.likehome.service.*;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -47,6 +53,27 @@ public class PublicController {
     public List<Reservation> reservationDb() {
         return reservationService.fetchAllReservationData();
     }
+
+    /**
+     * Get a JWT token for the user. Convenience method for testing.
+     */
+    @GetMapping("/token")
+    public String getToken(@RequestBody TokenRequest request) throws IOException, InterruptedException {
+        var httpRequest = HttpRequest.newBuilder(URI.create(
+                "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + request.firebaseApiKey()))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("""
+                        { "email": "%s", "password": "%s", "returnSecureToken": true }
+                        """.formatted(request.email(), request.password())))
+                .build();
+        try (var client = HttpClient.newHttpClient()) {
+            HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            return new ObjectMapper().readTree(response.body())
+                    .get("idToken").asText();
+        }
+    }
+
+    public record TokenRequest(String firebaseApiKey, String email, String password) {}
 
     /**
      * Retrieve a list of all rooms with optional filters.
