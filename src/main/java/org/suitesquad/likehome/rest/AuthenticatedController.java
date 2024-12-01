@@ -64,20 +64,15 @@ public class AuthenticatedController {
      */
     @GetMapping(path = "/reservations")
     public List<ReservationInfo> getReservations(JwtAuthenticationToken token) {
-        List<Reservation> reservationList = reservationService.findByUserId(getUserID(token));
-
-        var reservations = new ArrayList<ReservationInfo>();
-        for (Reservation reservation : reservationList) {
-            reservations.add(new ReservationInfo(
-                    reservation.getId(),
-                    reservation.getHotelId(),
-                    reservation.getUserId(),
-                    reservation.getRoomId(),
-                    reservation.getCheckIn(),
-                    reservation.getCheckOut()));
-        }
-
-        return reservations;
+        return reservationService.findByUserId(getUserID(token)).stream()
+                .map(reservation -> new ReservationInfo(
+                        reservation.getId(),
+                        reservation.getHotelId(),
+                        reservation.getUserId(),
+                        reservation.getRoomId(),
+                        reservation.getCheckIn(),
+                        reservation.getCheckOut()))
+                .toList();
     }
 
     /**
@@ -91,7 +86,7 @@ public class AuthenticatedController {
     public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationRequest reservationInfo) {
         reservationService.findByUserId(getUserID(token)).stream()
                 .filter(reservation -> reservation.getCheckIn().before(reservationInfo.checkOutDate()) &&
-                        reservation.getCheckOut().after(reservationInfo.checkInDate()))
+                                       reservation.getCheckOut().after(reservationInfo.checkInDate()))
                 .findAny().ifPresent(reservation -> {
                     throw new RuntimeException("User already has a reservation for this time period");
                 });
@@ -104,11 +99,9 @@ public class AuthenticatedController {
         reservationDetails.setCheckOut(reservationInfo.checkOutDate());
 
         String id = reservationService.addReservationData(reservationDetails).getId();
-
         userService.findById(getUserID(token)).ifPresent(user ->
                 userService.updateUserPoints(user.getId(), user.getRewardPoints() + 10)
         );
-
         return id;
     }
 

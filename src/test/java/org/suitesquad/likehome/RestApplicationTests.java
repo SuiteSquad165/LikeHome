@@ -7,8 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -29,8 +28,10 @@ class RestApplicationTests {
     }
 
     @Test
-    void userDb() throws Exception {
-        mockMvc.perform(get("/userdb"))
-                .andExpect(status().isOk());
+    void hotels() throws Exception {
+        mockMvc.perform(get("/hotels"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+        ;
     }
 }
