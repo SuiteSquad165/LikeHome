@@ -9,6 +9,4 @@ import java.util.List;
 @Repository
 public interface ReviewRepository extends MongoRepository<Review, String> {
     List<Review> findByHotelId(String hotelId);
-
-    void updateReviewById(String id, Review reviewDetails);
 }
