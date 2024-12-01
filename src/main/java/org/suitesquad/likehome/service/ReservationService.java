@@ -34,6 +34,10 @@ public class ReservationService {
         reservationRepo.deleteAll();
     }
 
+    public void deleteById(String id) {
+        reservationRepo.deleteById(id);
+    }
+
     public List<Reservation> findByUserId(String userId) {
         return reservationRepo.findByUserId(userId);
     }

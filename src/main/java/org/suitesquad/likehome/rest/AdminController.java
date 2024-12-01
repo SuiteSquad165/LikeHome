@@ -1,7 +1,6 @@
 package org.suitesquad.likehome.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.service.ReservationService;
 import org.suitesquad.likehome.service.UserService;
+import org.suitesquad.likehome.rest.RestTypes.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +28,7 @@ public class AdminController {
      * Get a specific reservation for this user by ID.
      */
     @GetMapping(path = "/reservations/{reservationId}")
-    public RestTypes.ReservationInfo getReservationById(@PathVariable String reservationId) {
+    public ReservationInfo getReservationById(@PathVariable String reservationId) {
         Reservation reservation = reservationService.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' does not exist!"));
 
@@ -42,7 +42,7 @@ public class AdminController {
     }
 
     @GetMapping("/reservations/user/{userId}")
-    public List<RestTypes.ReservationInfo> getReservationsByUserId(@PathVariable String userId) {
+    public List<ReservationInfo> getReservationsByUserId(@PathVariable String userId) {
         if (userService.findById(userId).isEmpty()) {
             throw new RuntimeException("User '" + userId + "' does not exist!");
         }

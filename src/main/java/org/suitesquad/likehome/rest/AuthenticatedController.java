@@ -41,10 +41,13 @@ public class AuthenticatedController {
             throw new RuntimeException("User already exists in database!");
         }
         var user = new User();
+
         user.setId(getUserID(token));
         user.setEmail(info.email());
         user.setFirstName(info.firstName());
         user.setLastName(info.lastName());
+        user.setRewardPoints(0);
+
         userService.addUserData(user);
         return user;
     }
@@ -99,6 +102,22 @@ public class AuthenticatedController {
         userService.findById(getUserID(token)).ifPresent(user ->
                 userService.updateUserPoints(user.getId(), user.getRewardPoints() + 10)
         );
+    }
+
+    @DeleteMapping(path = "/reservations/{reservationId}")
+    public void deleteReservation(JwtAuthenticationToken token, @PathVariable String reservationId) {
+        reservationService.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' not found"));
+
+        Optional<User> user_optional = userService.findById(getUserID(token));
+        if (user_optional.isEmpty()) {
+            throw new RuntimeException("User '" + getUserID(token) + "' does not exist!");
+        }
+
+        User user = user_optional.get();
+        user.setRewardPoints(user.getRewardPoints() - 10);
+
+        reservationService.deleteById(reservationId);
     }
 
     /**
