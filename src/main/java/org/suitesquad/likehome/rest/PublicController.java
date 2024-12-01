@@ -111,16 +111,16 @@ public class PublicController {
         List<Room> fetchedRooms = roomService.findByHotelId(hotelId);
 
         if ("price".equals(filters.get("sort"))) {
-            fetchedRooms.sort(Comparator.comparingDouble(Room::getPrice));
+            fetchedRooms.sort(Comparator.comparingDouble(Room::getPricePerNight));
         }
 
         var rooms = new ArrayList<RoomInfo>();
         for (Room room : fetchedRooms) {
             rooms.add(new RoomInfo(
                     room.getId(),
-                    room.getRoomType(),
-                    room.getPrice(),
-                    room.getFeatures(),
+                    room.getName(),
+                    room.getPricePerNight(),
+                    room.getAmenities(),
                     room.getImageUrls()
             ));
         }
@@ -139,9 +139,9 @@ public class PublicController {
 
         return new RoomInfo(
                 fetchedRoom.getId(),
-                fetchedRoom.getRoomType(),
-                fetchedRoom.getPrice(),
-                fetchedRoom.getFeatures(),
+                fetchedRoom.getName(),
+                fetchedRoom.getPricePerNight(),
+                fetchedRoom.getAmenities(),
                 fetchedRoom.getImageUrls()
         );
     }

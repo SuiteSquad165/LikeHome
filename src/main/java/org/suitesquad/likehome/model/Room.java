@@ -15,11 +15,15 @@ public class Room {
     @Id
     @Indexed(unique = true)
     private String id;
-
     private String hotelId;
-    private String roomType;
-    private double price;   // price per night
+
+    private String name;    // Room Type or title (Basic Suite, Oceanside Deluxe, etc.)
+    private int baths;
+    private int beds;
+    private int guests;
+    private String description;
+    private double pricePerNight;
     private int availability;
-    private List<String> features;
     private List<String> imageUrls;
+    private List<String> amenities;
 }
