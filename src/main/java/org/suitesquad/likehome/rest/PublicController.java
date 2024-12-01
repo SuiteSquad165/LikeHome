@@ -22,10 +22,11 @@ import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * This class handles all requests not requiring authentication.
@@ -66,47 +67,41 @@ public class PublicController {
     public record TokenRequest(String firebaseApiKey, String email, String password) {}
 
     /**
-     * Retrieve a list of all hotels with optional sort by rating. All filters are case-insensitive.
+     * Retrieve a list of all hotels with optional filters. All filters are case-insensitive.
      *
-     * @param sort     Sort by rating if "rating" is passed
-     * @param location city, state, or country contains
-     * @param name     hotel name contains
-     * @param rating   minimum rating
+     * @param sort      Sort by rating if "rating" is passed
+     * @param location  city, state, or country contains
+     * @param name      hotel name contains
+     * @param minRating minimum rating
      */
     @GetMapping("/hotels")
     public List<HotelInfo> getAllHotels(@RequestParam(required = false) String sort,
                                         @RequestParam(required = false) String location,
                                         @RequestParam(required = false) String name,
-                                        @RequestParam(required = false) Double rating) {
+                                        @RequestParam(defaultValue = "0") Double minRating) {
         var hotels = hotelService.findAll().stream();
 
         if ("rating".equalsIgnoreCase(sort)) {
             hotels = hotels.sorted(Comparator.comparingDouble(Hotel::getRating).reversed());
         }
-        if (isNotBlank(location)) {
-            hotels = hotels.filter(hotel ->
-                    containsIgnoreCase(hotel.getLocation().getCity(), location)
-                    || containsIgnoreCase(hotel.getLocation().getState(), location)
-                    || containsIgnoreCase(hotel.getLocation().getCountry(), location)
-            );
-        }
-        if (isNotBlank(name)) {
-            hotels = hotels.filter(hotel -> containsIgnoreCase(hotel.getName(), name));
-        }
-        if (rating != null && rating > 0) {
-            hotels = hotels.filter(hotel -> hotel.getRating() >= rating);
-        }
-
-        return hotels.map(hotel -> new HotelInfo(
-                hotel.getId(),
-                hotel.getName(),
-                hotel.getDescription(),
-                hotel.getRating(),
-                reviewService.findByHotelId(hotel.getId()).size(),
-                hotel.getLocation().getCity(),
-                hotel.getImageUrls(),
-                roomService.findByHotelId(hotel.getId()).stream().map(Room::getId).toList()
-        )).toList();
+        return hotels
+                .filter(isBlank(location) ? noFilter()
+                        : hotel -> containsIgnoreCase(hotel.getLocation().getCity(), location)
+                                   || containsIgnoreCase(hotel.getLocation().getState(), location)
+                                   || containsIgnoreCase(hotel.getLocation().getCountry(), location))
+                .filter(isBlank(name) ? noFilter()
+                        : hotel -> containsIgnoreCase(hotel.getName(), name))
+                .filter(hotel -> hotel.getRating() >= minRating)
+                .map(hotel -> new HotelInfo(
+                        hotel.getId(),
+                        hotel.getName(),
+                        hotel.getDescription(),
+                        hotel.getRating(),
+                        reviewService.findByHotelId(hotel.getId()).size(),
+                        hotel.getLocation().getCity(),
+                        hotel.getImageUrls(),
+                        roomService.findByHotelId(hotel.getId()).stream().map(Room::getId).toList()
+                )).toList();
     }
 
     @GetMapping("/hotels/{hotelId}")
@@ -115,7 +110,6 @@ public class PublicController {
                 .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
         var roomIds = roomService.findByHotelId(hotel.getId()).stream().map(Room::getId).toList();
-
         return new HotelInfo(
                 hotel.getId(),
                 hotel.getName(),
@@ -127,19 +121,73 @@ public class PublicController {
                 roomIds);
     }
 
+    /**
+     * Retrieve a list of all rooms for a hotel with optional filters. All filters are case-insensitive.
+     *
+     * @param hotelId     hotel ID
+     * @param sort        Sort by price if "price" is passed
+     * @param name        room name contains
+     * @param minBaths    minimum number of baths
+     * @param minBeds     minimum number of beds
+     * @param minGuests   minimum number of guests
+     * @param minBedrooms minimum number of bedrooms
+     * @param minPrice    minimum price per night
+     * @param maxPrice    maximum price per night
+     */
     @GetMapping("/hotels/{hotelId}/rooms")
     public List<RoomInfo> getHotelRooms(@PathVariable String hotelId,
-                                        @RequestParam(required = false) Map<String, String> filters) {
+                                        @RequestParam(required = false) String sort,
+                                        @RequestParam(required = false) String name,
+                                        @RequestParam(defaultValue = "0") Integer minBaths,
+                                        @RequestParam(defaultValue = "0") Integer minBeds,
+                                        @RequestParam(defaultValue = "0") Integer minGuests,
+                                        @RequestParam(defaultValue = "0") Integer minBedrooms,
+                                        @RequestParam(defaultValue = "0") Double minPrice,
+                                        @RequestParam(required = false) Double maxPrice) {
         hotelService.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
-        List<Room> fetchedRooms = roomService.findByHotelId(hotelId);
+        Stream<Room> rooms = roomService.findByHotelId(hotelId).stream();
 
-        if ("price".equals(filters.get("sort"))) {
-            fetchedRooms.sort(Comparator.comparingDouble(Room::getPricePerNight));
+        if ("price".equalsIgnoreCase(sort)) {
+            rooms = rooms.sorted(Comparator.comparingDouble(Room::getPricePerNight));
         }
+        return rooms
+                .filter(isBlank(name) ? noFilter()
+                        : room -> containsIgnoreCase(room.getName(), name))
+                .filter(room -> room.getBaths() >= minBaths)
+                .filter(room -> room.getBeds() >= minBeds)
+                .filter(room -> room.getGuests() >= minGuests)
+                .filter(room -> room.getBedrooms() >= minBedrooms)
+                .filter(room -> room.getPricePerNight() >= minPrice)
+                .filter(maxPrice == null ? noFilter()
+                        : room -> room.getPricePerNight() <= maxPrice)
+                .map(room -> new RoomInfo(
+                        room.getId(),
+                        room.getName(),
+                        room.getBaths(),
+                        room.getBeds(),
+                        room.getGuests(),
+                        room.getBedrooms(),
+                        room.getDescription(),
+                        room.getPricePerNight(),
+                        room.getAmenities(),
+                        room.getImageUrls()
+                )).toList();
+    }
 
-        return fetchedRooms.stream().map(room -> new RoomInfo(
+    private static <T> Predicate<T> noFilter() { // for when no filter is applied
+        return t -> true;
+    }
+
+    @GetMapping("/hotels/{hotelId}/rooms/{roomId}")
+    public RoomInfo getHotelRoomById(@PathVariable String hotelId, @PathVariable String roomId) {
+        hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
+
+        Room room = roomService.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room '" + roomId + "' not found"));
+        return new RoomInfo(
                 room.getId(),
                 room.getName(),
                 room.getBaths(),
@@ -150,51 +198,21 @@ public class PublicController {
                 room.getPricePerNight(),
                 room.getAmenities(),
                 room.getImageUrls()
-        )).toList();
-    }
-
-    @GetMapping("/hotels/{hotelId}/rooms/{roomId}")
-    public RoomInfo getHotelRoomById(@PathVariable String hotelId, @PathVariable String roomId) {
-        hotelService.findById(hotelId)
-                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
-
-
-        Room fetchedRoom = roomService.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("Room '" + roomId + "' not found"));
-
-        return new RoomInfo(
-                fetchedRoom.getId(),
-                fetchedRoom.getName(),
-                fetchedRoom.getBaths(),
-                fetchedRoom.getBeds(),
-                fetchedRoom.getGuests(),
-                fetchedRoom.getBedrooms(),
-                fetchedRoom.getDescription(),
-                fetchedRoom.getPricePerNight(),
-                fetchedRoom.getAmenities(),
-                fetchedRoom.getImageUrls()
         );
     }
 
     @GetMapping("/hotels/{hotelId}/reviews")
-    public List<ReviewInfo> getReviewByHotelId(@PathVariable String hotelId) {
+    public List<ReviewInfo> getReviewsByHotelId(@PathVariable String hotelId) {
         hotelService.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
-
-        List<Review> reviews = reviewService.findByHotelId(hotelId);
-
-        var reviewInfos = new ArrayList<ReviewInfo>();
-        for (Review review : reviews) {
-            reviewInfos.add(new ReviewInfo(
-                    review.getId(),
-                    review.getUserId(),
-                    review.getContents(),
-                    review.getRating(),
-                    review.getReviewDate()
-            ));
-        }
-
-        return reviewInfos;
+        return reviewService.findByHotelId(hotelId).stream()
+                .map(review -> new ReviewInfo(
+                        review.getId(),
+                        review.getUserId(),
+                        review.getContents(),
+                        review.getRating(),
+                        review.getReviewDate()
+                )).toList();
     }
 }
