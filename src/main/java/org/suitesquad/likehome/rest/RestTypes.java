@@ -16,7 +16,7 @@ public class RestTypes {
     public record HotelInfo(String id, String name, String description, double rating,
                             int numberOfReviews, String city, List<String> imageUrls, List<String> roomsIds) {}
 
-    public record RoomInfo(String id, String name, int baths, int beds, int guests, double pricePerNight, List<String> amenities, List<String> imageUrls) {}
+    public record RoomInfo(String id, String name, int baths, int beds, int guests, int bedrooms, String description, double pricePerNight, List<String> amenities, List<String> imageUrls) {}
 
     public record ReservationInfo(String id, String hotelId, String userId, String roomId, Date checkInDate,
                                   Date checkOutDate) {}

@@ -151,6 +151,8 @@ public class PublicController {
                     room.getBaths(),
                     room.getBeds(),
                     room.getGuests(),
+                    room.getBedrooms(),
+                    room.getDescription(),
                     room.getPricePerNight(),
                     room.getAmenities(),
                     room.getImageUrls()
@@ -175,6 +177,8 @@ public class PublicController {
                 fetchedRoom.getBaths(),
                 fetchedRoom.getBeds(),
                 fetchedRoom.getGuests(),
+                fetchedRoom.getBedrooms(),
+                fetchedRoom.getDescription(),
                 fetchedRoom.getPricePerNight(),
                 fetchedRoom.getAmenities(),
                 fetchedRoom.getImageUrls()
