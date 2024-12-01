@@ -106,7 +106,7 @@ public class AuthenticatedController {
 
     @DeleteMapping(path = "/reservations/{reservationId}")
     public void deleteReservation(JwtAuthenticationToken token, @PathVariable String reservationId) {
-        reservationService.findById(reservationId)
+        Reservation reservation = reservationService.findById(reservationId)
                 .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' not found"));
 
         Optional<User> user_optional = userService.findById(getUserID(token));
@@ -115,7 +115,12 @@ public class AuthenticatedController {
         }
 
         User user = user_optional.get();
-        user.setRewardPoints(user.getRewardPoints() - 10);
+
+        if(!reservation.getUserId().equalsIgnoreCase(user.getId())) {
+            throw new RuntimeException("Reservation '" + reservationId + "' does not belong to User '" + user.getId() + "'!");
+        }
+
+        userService.updateUserPoints(user.getId(), user.getRewardPoints() - 10);
 
         reservationService.deleteById(reservationId);
     }
