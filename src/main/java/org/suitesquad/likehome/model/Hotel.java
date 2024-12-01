@@ -22,19 +22,10 @@ public class Hotel {
     private double rating;
     private Location location;
     private ContactInfo contactInfo;
-    private List<Room> rooms;
+    private List<String> roomIds;
     private List<String> amenities;
+    private int reviewCount;
     private List<String> imageUrls;
-
-    @Getter
-    @Setter
-    public static class Room {
-        private String roomType;
-        private double price;   // price per night
-        private int availability;
-        private List<String> features;
-        private String imageUrl;
-    }
 
     @Getter
     @Setter

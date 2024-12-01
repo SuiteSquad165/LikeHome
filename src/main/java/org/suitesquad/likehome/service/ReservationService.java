@@ -6,6 +6,7 @@ import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.repository.ReservationRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ReservationService {
@@ -38,5 +39,9 @@ public class ReservationService {
 
     public List<Reservation> findByHotelId(String hotelId){
         return reservationRepo.findByHotelId(hotelId);
+    }
+
+    public Optional<Reservation> findById(String id) {
+        return reservationRepo.findById(id);
     }
 }

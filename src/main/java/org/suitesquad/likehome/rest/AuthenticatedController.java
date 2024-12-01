@@ -3,17 +3,21 @@ package org.suitesquad.likehome.rest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import org.suitesquad.likehome.model.Hotel;
+import org.suitesquad.likehome.model.Reservation;
+import org.suitesquad.likehome.model.Review;
 import org.suitesquad.likehome.model.User;
+import org.suitesquad.likehome.rest.RestTypes.ReservationInfo;
 import org.suitesquad.likehome.rest.RestTypes.ChatMessage;
-import org.suitesquad.likehome.rest.RestTypes.Reservation;
 import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
+import org.suitesquad.likehome.service.HotelService;
+import org.suitesquad.likehome.service.ReservationService;
+import org.suitesquad.likehome.service.ReviewService;
 import org.suitesquad.likehome.service.UserService;
 
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.stream.Stream;
+import java.time.ZoneId;
+import java.util.*;
 
 /**
  * This class handles all authenticated requests.
@@ -23,8 +27,11 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping("/auth")
 public class AuthenticatedController {
-    
+
     @Autowired private UserService userService;
+    @Autowired private ReservationService reservationService;
+    @Autowired private HotelService hotelService;
+    @Autowired private ReviewService reviewService;
 
     /**
      * Creates a user in the database with the email and name from the SignUpInfo object
@@ -57,16 +64,68 @@ public class AuthenticatedController {
      * Get the reservations for this user.
      */
     @GetMapping(path = "/reservations")
-    public List<Reservation> getReservations(JwtAuthenticationToken token) {
-        return List.of(Reservation.sample);
+    public List<ReservationInfo> getReservations(JwtAuthenticationToken token) {
+        List<ReservationInfo> reservations = new ArrayList<>();
+        System.out.println(getUserID(token));
+        List<Reservation> reservationList = reservationService.findByUserId(getUserID(token));
+        for(Reservation reservation : reservationList) {
+            reservations.add(new ReservationInfo(
+                    reservation.getId(),
+                    reservation.getHotelId(),
+                    reservation.getUserId(),
+                    reservation.getRoomId(),
+                    reservation.getCheckIn(),
+                    reservation.getCheckOut()));
+        }
+
+        return reservations;
     }
 
     /**
      * Get a specific reservation for this user by ID.
      */
     @GetMapping(path = "/reservations/{reservationId}")
-    public Reservation getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
-        return Stream.of(Reservation.sample).filter(r -> r.id().equals(reservationId)).findAny().orElseThrow();
+    public ReservationInfo getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
+        ReservationInfo reservationInfo;
+
+        Reservation reservation = reservationService.findById(reservationId).isPresent() ? reservationService.findById(reservationId).get() : null;
+        if(reservation == null) {
+            throw new RuntimeException("Reservation '" + reservationId + "' does not exist!");
+        }
+
+        reservationInfo = new ReservationInfo(
+                reservation.getId(),
+                reservation.getHotelId(),
+                reservation.getUserId(),
+                reservation.getRoomId(),
+                reservation.getCheckIn(),
+                reservation.getCheckOut());
+
+        return reservationInfo;
+    }
+
+    @GetMapping("/reservations/user/{userId}")
+    public List<ReservationInfo> getReservationsByUserId(JwtAuthenticationToken token, @PathVariable String userId) {
+        List<ReservationInfo> reservationInfos = new ArrayList<>();
+
+        if (userService.findById(userId).isEmpty()) {
+            throw new RuntimeException("User '" + userId + "' does not exist!");
+        }
+
+        List<Reservation> reservations = reservationService.findByUserId(userId);
+
+        for(Reservation reservation : reservations) {
+            reservationInfos.add(new ReservationInfo(
+                    reservation.getId(),
+                    reservation.getHotelId(),
+                    reservation.getUserId(),
+                    reservation.getRoomId(),
+                    reservation.getCheckIn(),
+                    reservation.getCheckOut()
+            ));
+        }
+
+        return reservationInfos;
     }
 
     /**
@@ -75,8 +134,42 @@ public class AuthenticatedController {
      * Instead, the id is generated and assigned, and the user ID is retrieved from the token.
      */
     @PostMapping(path = "/reservations")
-    public void createReservation(JwtAuthenticationToken token, @RequestBody Reservation reservation) {
+    public void createReservation(JwtAuthenticationToken token, @RequestBody ReservationInfo reservationInfo) {
+        Reservation reservationDetails = new Reservation();
 
+        reservationDetails.setHotelId(reservationInfo.hotelId());
+        reservationDetails.setUserId(reservationInfo.userId());
+        reservationDetails.setRoomId(reservationInfo.roomId());
+        reservationDetails.setCheckIn(reservationInfo.checkInDate());
+        reservationDetails.setCheckOut(reservationInfo.checkOutDate());
+
+        reservationService.addReservationData(reservationDetails);
+
+        Optional<User> user_optional = userService.findById(reservationInfo.userId());
+        if(user_optional.isPresent()) {
+            User user = user_optional.get();
+            userService.updateUserPoints(reservationInfo.userId(), user.getPoints() + 10);
+        }
+    }
+
+    @PostMapping("/hotels/{hotelId}/reviews")
+    public void createReview(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo reviewInfo) {
+        Review review = new Review();
+
+        Hotel hotel = hotelService.findById(hotelId);
+        if(hotel == null) {
+            throw new RuntimeException("Hotel '" + hotelId + "' not found");
+        }
+
+        review.setHotelId(hotelId);
+        review.setUserId(reviewInfo.userId());
+        review.setRating(reviewInfo.rating());
+        review.setContents(reviewInfo.contents());
+        review.setReviewDate(reviewInfo.reviewDate());
+
+        reviewService.addReviewData(review);
+
+        hotelService.updateReviewCount(hotel.getId(), hotel.getReviewCount() + 1);
     }
 
     /**
