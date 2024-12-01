@@ -119,6 +119,9 @@ public class PublicController {
             rooms.add(new RoomInfo(
                     room.getId(),
                     room.getName(),
+                    room.getBaths(),
+                    room.getBeds(),
+                    room.getGuests(),
                     room.getPricePerNight(),
                     room.getAmenities(),
                     room.getImageUrls()
@@ -140,6 +143,9 @@ public class PublicController {
         return new RoomInfo(
                 fetchedRoom.getId(),
                 fetchedRoom.getName(),
+                fetchedRoom.getBaths(),
+                fetchedRoom.getBeds(),
+                fetchedRoom.getGuests(),
                 fetchedRoom.getPricePerNight(),
                 fetchedRoom.getAmenities(),
                 fetchedRoom.getImageUrls()
