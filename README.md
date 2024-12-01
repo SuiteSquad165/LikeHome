@@ -4,16 +4,12 @@
 Make sure you have Java 21 installed. You can download it from [here](https://www.azul.com/downloads/?version=java-21-lts&package=jdk#zulu).
 
 ## Running from command line
+Note: in all the following commands, `gradle` means `./gradlew` on Linux/macOS and `gradlew.bat` on Windows.
 1. Set the environment variables `DB_URL` and `DB_NAME` to the URL and name of the MongoDB database.
 2. Run the following command:
 
-Linux/macOS:
 ```shell
-./gradlew
-```
-Windows:
-```shell
-gradlew
+gradle
 ```
 You should see `Started RestApplication...` in the output, which means the server is running.
 
@@ -27,10 +23,11 @@ You should see `Started RestApplication...` in the output, which means the serve
 
 Note: you can modify environment variables further by clicking on the `Edit Configurations...` option in the dropdown next to the green play button.
 
-## Running tests
-(Linux/macOS) `./gradlew test`
+## Viewing the API documentation
+After running the server, navigate to `http://localhost:8080/apidoc` in your browser to view the API documentation.
 
-(Windows) `gradlew test`
+## Running tests
+`gradle test`
 
 IntelliJ:
 1. Open the Gradle tool window on the right side of the window, navigate to `Tasks` -> `verification` -> `test` and right-click test.
