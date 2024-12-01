@@ -30,6 +30,9 @@ public class Reservation {
     private Date checkIn;
     private Date checkOut;
     private double totalPrice;
+    /**
+     * True if booked, false if cancelled
+     */
     private boolean status;
     private Date bookingDate;
     private Payment payment;

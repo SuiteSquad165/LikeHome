@@ -3,12 +3,11 @@ package org.suitesquad.likehome.rest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-import org.suitesquad.likehome.model.Hotel;
 import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.model.Review;
 import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.rest.RestTypes.ReservationInfo;
 import org.suitesquad.likehome.rest.RestTypes.ChatMessage;
+import org.suitesquad.likehome.rest.RestTypes.ReservationInfo;
 import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.rest.RestTypes.SignUpInfo;
 import org.suitesquad.likehome.service.HotelService;
@@ -16,7 +15,6 @@ import org.suitesquad.likehome.service.ReservationService;
 import org.suitesquad.likehome.service.ReviewService;
 import org.suitesquad.likehome.service.UserService;
 
-import java.time.ZoneId;
 import java.util.*;
 
 /**
@@ -57,7 +55,8 @@ public class AuthenticatedController {
      */
     @PostMapping(path = "/signin")
     public User signedIn(JwtAuthenticationToken token) {
-        return userService.findById(getUserID(token)).orElseThrow(()-> new NoSuchElementException("User not found in database"));
+        return userService.findById(getUserID(token))
+                .orElseThrow(() -> new NoSuchElementException("User not found in database"));
     }
 
     /**
@@ -65,10 +64,10 @@ public class AuthenticatedController {
      */
     @GetMapping(path = "/reservations")
     public List<ReservationInfo> getReservations(JwtAuthenticationToken token) {
-        List<ReservationInfo> reservations = new ArrayList<>();
-        System.out.println(getUserID(token));
         List<Reservation> reservationList = reservationService.findByUserId(getUserID(token));
-        for(Reservation reservation : reservationList) {
+
+        var reservations = new ArrayList<ReservationInfo>();
+        for (Reservation reservation : reservationList) {
             reservations.add(new ReservationInfo(
                     reservation.getId(),
                     reservation.getHotelId(),
@@ -82,107 +81,59 @@ public class AuthenticatedController {
     }
 
     /**
-     * Get a specific reservation for this user by ID.
-     */
-    @GetMapping(path = "/reservations/{reservationId}")
-    public ReservationInfo getReservationById(JwtAuthenticationToken token, @PathVariable String reservationId) {
-        ReservationInfo reservationInfo;
-
-        Reservation reservation = reservationService.findById(reservationId).isPresent() ? reservationService.findById(reservationId).get() : null;
-        if(reservation == null) {
-            throw new RuntimeException("Reservation '" + reservationId + "' does not exist!");
-        }
-
-        reservationInfo = new ReservationInfo(
-                reservation.getId(),
-                reservation.getHotelId(),
-                reservation.getUserId(),
-                reservation.getRoomId(),
-                reservation.getCheckIn(),
-                reservation.getCheckOut());
-
-        return reservationInfo;
-    }
-
-    @GetMapping("/reservations/user/{userId}")
-    public List<ReservationInfo> getReservationsByUserId(JwtAuthenticationToken token, @PathVariable String userId) {
-        List<ReservationInfo> reservationInfos = new ArrayList<>();
-
-        if (userService.findById(userId).isEmpty()) {
-            throw new RuntimeException("User '" + userId + "' does not exist!");
-        }
-
-        List<Reservation> reservations = reservationService.findByUserId(userId);
-
-        for(Reservation reservation : reservations) {
-            reservationInfos.add(new ReservationInfo(
-                    reservation.getId(),
-                    reservation.getHotelId(),
-                    reservation.getUserId(),
-                    reservation.getRoomId(),
-                    reservation.getCheckIn(),
-                    reservation.getCheckOut()
-            ));
-        }
-
-        return reservationInfos;
-    }
-
-    /**
      * Create a reservation for this user.
      * The reservation.id field and reservation.userID fields are ignored.
      * Instead, the id is generated and assigned, and the user ID is retrieved from the token.
      */
     @PostMapping(path = "/reservations")
     public void createReservation(JwtAuthenticationToken token, @RequestBody ReservationInfo reservationInfo) {
-        Reservation reservationDetails = new Reservation();
-
+        var reservationDetails = new Reservation();
+        reservationDetails.setUserId(getUserID(token));
         reservationDetails.setHotelId(reservationInfo.hotelId());
-        reservationDetails.setUserId(reservationInfo.userId());
         reservationDetails.setRoomId(reservationInfo.roomId());
         reservationDetails.setCheckIn(reservationInfo.checkInDate());
         reservationDetails.setCheckOut(reservationInfo.checkOutDate());
 
         reservationService.addReservationData(reservationDetails);
 
-        Optional<User> user_optional = userService.findById(reservationInfo.userId());
-        if(user_optional.isPresent()) {
-            User user = user_optional.get();
-            userService.updateUserPoints(reservationInfo.userId(), user.getPoints() + 10);
-        }
+        userService.findById(getUserID(token)).ifPresent(user ->
+                userService.updateUserPoints(user.getId(), user.getRewardPoints() + 10)
+        );
     }
 
-    @PostMapping("/hotels/{hotelId}/reviews")
-    public void createReview(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo reviewInfo) {
-        Review review = new Review();
+    /**
+     * Add a review for a hotel.
+     * Updates an existing review if the user already reviewed the hotel.
+     * Error if user has not stayed at the hotel.
+     */
+    @PutMapping(path = "/hotels/{hotelId}/reviews")
+    public void reviewHotel(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo reviewInfo) {
+        hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
-        Hotel hotel = hotelService.findById(hotelId);
-        if(hotel == null) {
-            throw new RuntimeException("Hotel '" + hotelId + "' not found");
+        if (reservationService.findByUserIdAndHotelId(getUserID(token), hotelId).isEmpty()) {
+            throw new RuntimeException("User has not stayed at hotel '" + hotelId + "'");
         }
 
+        var review = new Review();
+        if (reviewInfo.id() != null) {
+            Optional<Review> oldReview = reviewService.findById(reviewInfo.id());
+            if (oldReview.isPresent() && oldReview.get().getUserId().equals(getUserID(token))) {
+                review.setId(reviewInfo.id());
+            }
+        }
         review.setHotelId(hotelId);
-        review.setUserId(reviewInfo.userId());
+        review.setUserId(getUserID(token));
         review.setRating(reviewInfo.rating());
         review.setContents(reviewInfo.contents());
         review.setReviewDate(reviewInfo.reviewDate());
 
-        reviewService.addReviewData(review);
-
-        hotelService.updateReviewCount(hotel.getId(), hotel.getReviewCount() + 1);
-    }
-
-    /**
-     * Add a review for a hotel. Updates an existing review if the user already reviewed the hotel.
-     * Error if user has not stayed at the hotel.
-     */
-    @PutMapping(path = "/review/{hotelId}")
-    public void reviewHotel(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo review) {
-
+        reviewService.addReviewData(review); // TODO update if (review.getId() != null)
     }
 
     /**
      * Respond to a user's chat message with a response from an AI assistant.
+     *
      * @param messageHistory the chat history between the user and the chatbot with the latest message at the end
      */
     @PostMapping(path = "/chat")

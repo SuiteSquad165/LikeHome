@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.util.List;
 
 @Document("hotels")
@@ -22,14 +23,12 @@ public class Hotel {
     private double rating;
     private Location location;
     private ContactInfo contactInfo;
-    private List<String> roomIds;
     private List<String> amenities;
-    private int reviewCount;
     private List<String> imageUrls;
 
     @Getter
     @Setter
-    static public class ContactInfo {
+    public static class ContactInfo {
         private String phone;
         private String email;
         private String website;
@@ -43,13 +42,5 @@ public class Hotel {
         private String state;
         private String zipCode;
         private String country;
-        private Coordinates coordinates;
-
-        @Getter
-        @Setter
-        public static class Coordinates {
-            private double latitude;
-            private double longitude;
-        }
     }
 }

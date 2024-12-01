@@ -6,8 +6,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.suitesquad.likehome.model.Hotel;
-import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.repository.HotelRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,36 +38,24 @@ public class HotelService {
         hotelRepo.remove(Hotel.class);
     }
 
-    public List<Hotel> findByName(String name){
-        Query query = new Query();
+    public List<Hotel> findByName(String name) {
+        var query = new Query();
         query.addCriteria(Criteria.where("name").is(name));
 
         return hotelRepo.find(query, Hotel.class);
     }
 
-    public Hotel findById(String id) {
-        Query query = new Query();
+    public Optional<Hotel> findById(String id) {
+        var query = new Query();
         query.addCriteria(Criteria.where("_id").is(id));
 
         List<Hotel> hotels = hotelRepo.find(query, Hotel.class);
-        if(hotels.isEmpty()) {
-            return null;
-        }
-
-        return hotels.getFirst();
+        return hotels.isEmpty() ? Optional.empty()
+                : Optional.of(hotels.getFirst());
     }
 
     public List<Hotel> findAllByQuery(Query query) {
         return hotelRepo.find(query, Hotel.class);
-    }
-
-    public void updateReviewCount(String id, int reviewCount)
-    {
-        Hotel hotel = findById(id);
-        if(hotel != null) {
-            hotel.setReviewCount(reviewCount);
-            hotelRepo.save(hotel);
-        }
     }
 
     /*

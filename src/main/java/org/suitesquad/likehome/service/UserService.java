@@ -1,9 +1,9 @@
 package org.suitesquad.likehome.service;
 
-import org.suitesquad.likehome.model.User;
-import org.suitesquad.likehome.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.suitesquad.likehome.model.User;
+import org.suitesquad.likehome.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +33,7 @@ public class UserService {
         userRepo.deleteAll();
     }
 
-    public List<User> findByEmail(String email){
+    public List<User> findByEmail(String email) {
         return userRepo.findByEmail(email);
     }
 
@@ -41,13 +41,11 @@ public class UserService {
         return userRepo.findById(id);
     }
 
-    public void updateUserPoints(String id, int points)
-    {
-        Optional<User> user_optional = userRepo.findById(id);
-        if(user_optional.isPresent()) {
-            User user = user_optional.get();
-            user.setPoints(points);
+    public void updateUserPoints(String id, int points) {
+        userRepo.findById(id).ifPresent(user -> {
+            user.setRewardPoints(points);
             userRepo.save(user);
-        }
+        });
+
     }
 }

@@ -19,7 +19,6 @@ public class Room {
     private String hotelId;
     private String roomType;
     private double price;   // price per night
-    private double rating;
     private int availability;
     private List<String> features;
     private List<String> imageUrls;

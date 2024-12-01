@@ -10,6 +10,7 @@ import java.util.Optional;
 
 @Service
 public class ReservationService {
+
     @Autowired
     private ReservationRepository reservationRepo;
 
@@ -33,15 +34,19 @@ public class ReservationService {
         reservationRepo.deleteAll();
     }
 
-    public List<Reservation> findByUserId(String userId){
+    public List<Reservation> findByUserId(String userId) {
         return reservationRepo.findByUserId(userId);
     }
 
-    public List<Reservation> findByHotelId(String hotelId){
+    public List<Reservation> findByHotelId(String hotelId) {
         return reservationRepo.findByHotelId(hotelId);
     }
 
     public Optional<Reservation> findById(String id) {
         return reservationRepo.findById(id);
+    }
+
+    public List<Reservation> findByUserIdAndHotelId(String userId, String hotelId) {
+        return reservationRepo.findByUserIdAndHotelId(userId, hotelId);
     }
 }

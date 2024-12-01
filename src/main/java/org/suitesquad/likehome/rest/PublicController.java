@@ -1,13 +1,19 @@
 package org.suitesquad.likehome.rest;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.*;
+import org.suitesquad.likehome.rest.RestTypes.HotelInfo;
+import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
+import org.suitesquad.likehome.rest.RestTypes.RoomInfo;
 import org.suitesquad.likehome.service.*;
-import org.suitesquad.likehome.rest.RestTypes.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class handles all requests not requiring authentication.
@@ -16,24 +22,15 @@ import java.util.*;
 @RequestMapping
 public class PublicController {
 
+    @Autowired private UserService userService;
+    @Autowired private HotelService hotelService;
+    @Autowired private ReservationService reservationService;
+    @Autowired private RoomService roomService;
+    @Autowired private ReviewService reviewService;
+
     @GetMapping("/ping")
     public String ping() {
         return "pong";
-    }
-
-    private final UserService userService;
-    private final HotelService hotelService;
-    private final ReservationService reservationService;
-    private final RoomService roomService;
-    private final ReviewService reviewService;
-
-    // Constructor injector
-    public PublicController(UserService userService, HotelService hotelService, ReservationService reservationService, RoomService roomService, ReviewService reviewService) {
-        this.userService = userService;
-        this.hotelService = hotelService;
-        this.reservationService = reservationService;
-        this.roomService = roomService;
-        this.reviewService = reviewService;
     }
 
     @GetMapping("/userdb")
@@ -53,43 +50,34 @@ public class PublicController {
 
     /**
      * Retrieve a list of all rooms with optional filters.
+     *
      * @param filters a set of filters to apply to the room search (for example, type=apartment)
      */
     @GetMapping("/hotels")
     public List<HotelInfo> getAllHotels(@RequestBody(required = false) Map<String, Object> filters) {
-        List<HotelInfo> hotels = new ArrayList<>();
-
-        // 0 = default, 1 = rating
-        int sort = 0;
-
-        Query query = new Query();
+        var query = new Query();
         for (String key : filters.keySet()) {
-            if(key.equalsIgnoreCase("sort"))
-            {
-                sort = switch ((String) filters.get(key)) {
-                    case "rating" -> 1;
-                    default -> 0;
-                };
-            }
             query.addCriteria(Criteria.where(key).is(filters.get(key)));
         }
 
         List<Hotel> fetchedHotelsQuery = hotelService.findAllByQuery(query);
 
-        if(sort == 1) {
+        if ("rating".equals(filters.get("sort"))) {
             fetchedHotelsQuery.sort(Comparator.comparingDouble(Hotel::getRating).reversed());
         }
 
+        var hotels = new ArrayList<HotelInfo>();
         for (Hotel hotel : fetchedHotelsQuery) {
+            var roomIds = roomService.findByHotelId(hotel.getId()).stream().map(Room::getId).toList();
             hotels.add(new HotelInfo(
                     hotel.getId(),
                     hotel.getName(),
                     hotel.getDescription(),
                     hotel.getRating(),
-                    hotel.getReviewCount(),
+                    reviewService.findByHotelId(hotel.getId()).size(),
                     hotel.getLocation().getCity(),
                     hotel.getImageUrls(),
-                    hotel.getRoomIds()
+                    roomIds
             ));
         }
 
@@ -97,67 +85,41 @@ public class PublicController {
     }
 
     @GetMapping("/hotels/{hotelId}")
-    public HotelInfo getHotelById(@PathVariable String hotelId,
-                                  @RequestParam(required = false) Map<String, String> filters) {
-        HotelInfo hotelInfo;
+    public HotelInfo getHotelById(@PathVariable String hotelId) {
+        Hotel hotel = hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
-        Hotel hotel = hotelService.findById(hotelId);
-        if(hotel == null) {
-            throw new RuntimeException("Hotel '" + hotelId + "' not found");
-        }
+        var roomIds = roomService.findByHotelId(hotel.getId()).stream().map(Room::getId).toList();
 
-        hotelInfo = new HotelInfo(
+        return new HotelInfo(
                 hotel.getId(),
                 hotel.getName(),
                 hotel.getDescription(),
                 hotel.getRating(),
-                hotel.getReviewCount(),
+                reviewService.findByHotelId(hotel.getId()).size(),
                 hotel.getLocation().getCity(),
                 hotel.getImageUrls(),
-                hotel.getRoomIds());
-
-        return hotelInfo;
+                roomIds);
     }
 
     @GetMapping("/hotels/{hotelId}/rooms")
     public List<RoomInfo> getHotelRooms(@PathVariable String hotelId,
                                         @RequestParam(required = false) Map<String, String> filters) {
-        List<RoomInfo> rooms = new ArrayList<>();
-
-        Hotel hotel = hotelService.findById(hotelId);
-        if(hotel == null) {
-            throw new RuntimeException("Hotel '" + hotelId + "' not found");
-        }
-
-        // 0 = default, 1 = rating, 2 = price
-        int sort = 0;
-
-        for (String key : filters.keySet()) {
-            if(key.equalsIgnoreCase("sort"))
-            {
-                sort = switch ((String) filters.get(key)) {
-                    case "rating" -> 1;
-                    case "price" -> 2;
-                    default -> 0;
-                };
-            }
-        }
+        hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
         List<Room> fetchedRooms = roomService.findByHotelId(hotelId);
 
-        if(sort == 1) {
-            fetchedRooms.sort(Comparator.comparingDouble(Room::getRating).reversed());
-        } else if(sort == 2)
-        {
+        if ("price".equals(filters.get("sort"))) {
             fetchedRooms.sort(Comparator.comparingDouble(Room::getPrice));
         }
 
+        var rooms = new ArrayList<RoomInfo>();
         for (Room room : fetchedRooms) {
             rooms.add(new RoomInfo(
                     room.getId(),
                     room.getRoomType(),
                     room.getPrice(),
-                    room.getRating(),
                     room.getFeatures(),
                     room.getImageUrls()
             ));
@@ -167,51 +129,39 @@ public class PublicController {
     }
 
     @GetMapping("/hotels/{hotelId}/rooms/{roomId}")
-    public RoomInfo getHotelRoomById(@PathVariable String hotelId, @PathVariable String roomId,
-                                     @RequestParam(required = false) Map<String, String> filters) {
-        RoomInfo room;
+    public RoomInfo getHotelRoomById(@PathVariable String hotelId, @PathVariable String roomId) {
+        hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
-        Hotel hotel = hotelService.findById(hotelId);
-        if(hotel == null) {
-            throw new RuntimeException("Hotel '" + hotelId + "' not found");
-        }
 
-        Room fetchedRoom = roomService.findById(roomId).isPresent() ? roomService.findById(roomId).get() : null;
-        if(fetchedRoom == null) {
-            throw new RuntimeException("Room '" + roomId + "' not found");
-        }
+        Room fetchedRoom = roomService.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room '" + roomId + "' not found"));
 
-        room = new RoomInfo(
+        return new RoomInfo(
                 fetchedRoom.getId(),
                 fetchedRoom.getRoomType(),
                 fetchedRoom.getPrice(),
-                fetchedRoom.getRating(),
                 fetchedRoom.getFeatures(),
                 fetchedRoom.getImageUrls()
         );
-
-        return room;
     }
 
     @GetMapping("/hotels/{hotelId}/reviews")
-    public List<ReviewInfo> getReviewByHotelId(@PathVariable String hotelId)
-    {
-        List<ReviewInfo> reviewInfos = new ArrayList<>();
+    public List<ReviewInfo> getReviewByHotelId(@PathVariable String hotelId) {
+        hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
-        Hotel hotel = hotelService.findById(hotelId);
-        if(hotel == null) {
-            throw new RuntimeException("Hotel '" + hotelId + "' not found");
-        }
 
-        List<Review> reviews = reviewService.findByHotelId(hotel.getId());
+        List<Review> reviews = reviewService.findByHotelId(hotelId);
 
-        for(Review review : reviews) {
+        var reviewInfos = new ArrayList<ReviewInfo>();
+        for (Review review : reviews) {
             reviewInfos.add(new ReviewInfo(
-               review.getId(),
-               review.getUserId(),
-               review.getContents(),
-               review.getRating(),
-               review.getReviewDate()
+                    review.getId(),
+                    review.getUserId(),
+                    review.getContents(),
+                    review.getRating(),
+                    review.getReviewDate()
             ));
         }
 

@@ -14,20 +14,17 @@ public class RestTypes {
     public record SignUpInfo(String email, String firstName, String lastName) {}
 
     public record HotelInfo(String id, String name, String description, double rating,
-                            int numberOfReviews, String city, List<String> imageUrls, List<String> roomsIds) {
-    }
+                            int numberOfReviews, String city, List<String> imageUrls, List<String> roomsIds) {}
 
-    public record RoomInfo(String id, String type, double price, double rating, List<String> features, List<String> imageUrls) {
+    public record RoomInfo(String id, String type, double price, List<String> features, List<String> imageUrls) {}
 
-    }
-
-    public record ReservationInfo(String id, String hotelId, String userId, String roomId, Date checkInDate, Date checkOutDate) {
-    }
+    public record ReservationInfo(String id, String hotelId, String userId, String roomId, Date checkInDate,
+                                  Date checkOutDate) {}
 
     public record ReviewInfo(String id, String userId, String contents, double rating, Date reviewDate) {}
 
     public record ChatMessage(Sender sender, String content) {
-         enum Sender {
+        enum Sender {
             USER, ASSISTANT
         }
     }
