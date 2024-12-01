@@ -84,9 +84,13 @@ public class AuthenticatedController {
      * Create a reservation for this user.
      * The reservation.id field and reservation.userID fields are ignored.
      * Instead, the id is generated and assigned, and the user ID is retrieved from the token.
+     * <p>
+     * TODO: verify payment and that the room is available
+     *
+     * @return the created reservation's ID
      */
     @PostMapping(path = "/reservations")
-    public void createReservation(JwtAuthenticationToken token, @RequestBody ReservationInfo reservationInfo) {
+    public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationInfo reservationInfo) {
         var reservationDetails = new Reservation();
         reservationDetails.setUserId(getUserID(token));
         reservationDetails.setHotelId(reservationInfo.hotelId());
@@ -94,11 +98,13 @@ public class AuthenticatedController {
         reservationDetails.setCheckIn(reservationInfo.checkInDate());
         reservationDetails.setCheckOut(reservationInfo.checkOutDate());
 
-        reservationService.addReservationData(reservationDetails);
+        String id = reservationService.addReservationData(reservationDetails).getId();
 
         userService.findById(getUserID(token)).ifPresent(user ->
                 userService.updateUserPoints(user.getId(), user.getRewardPoints() + 10)
         );
+
+        return id;
     }
 
     /**

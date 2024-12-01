@@ -14,8 +14,8 @@ public class ReservationService {
     @Autowired
     private ReservationRepository reservationRepo;
 
-    public void addReservationData(Reservation reservationDetails) {
-        reservationRepo.insert(reservationDetails);
+    public Reservation addReservationData(Reservation reservationDetails) {
+        return reservationRepo.insert(reservationDetails);
     }
 
     public void addMultipleReservationData(List<Reservation> reservationDetails) {
