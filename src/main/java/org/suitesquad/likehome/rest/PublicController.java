@@ -57,7 +57,7 @@ public class PublicController {
     /**
      * Get a JWT token for the user. Convenience method for testing.
      */
-    @GetMapping("/token")
+    @PostMapping("/token")
     public String getToken(@RequestBody TokenRequest request) throws IOException, InterruptedException {
         var httpRequest = HttpRequest.newBuilder(URI.create(
                 "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + request.firebaseApiKey()))
