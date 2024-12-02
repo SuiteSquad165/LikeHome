@@ -12,10 +12,7 @@ import org.suitesquad.likehome.model.User;
 import org.suitesquad.likehome.rest.RestTypes.*;
 import org.suitesquad.likehome.service.*;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * This class handles all authenticated requests.
@@ -57,8 +54,11 @@ public class AuthenticatedController {
      */
     @PostMapping(path = "/signin")
     public User signedIn(JwtAuthenticationToken token) {
-        return userService.findById(getUserID(token))
-                .orElseThrow(() -> new NoSuchElementException("User not found in database"));
+        Optional<User> user = userService.findById(getUserID(token));
+        if (user.isPresent()) {
+            return user.get();
+        }
+        return null;
     }
 
     /**
