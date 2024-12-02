@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.Hotel;
 import org.suitesquad.likehome.model.Room;
+import org.suitesquad.likehome.model.User;
 import org.suitesquad.likehome.rest.RestTypes.HotelInfo;
 import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.service.HotelService;
@@ -185,7 +186,7 @@ public class PublicController {
         return reviewService.findByHotelId(hotelId).stream()
                 .map(review -> new ReviewInfo(
                         review.getId(),
-                        userService.findById(review.getUserId()).get().getFirstName(),
+                        userService.findById(review.getUserId()).map(User::getFirstName).orElse("Unknown User"),
                         review.getContents(),
                         review.getRating(),
                         review.getReviewDate()

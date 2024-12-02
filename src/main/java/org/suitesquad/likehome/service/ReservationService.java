@@ -49,4 +49,8 @@ public class ReservationService {
     public List<Reservation> findByUserIdAndHotelId(String userId, String hotelId) {
         return reservationRepo.findByUserIdAndHotelId(userId, hotelId);
     }
+
+    public void save(Reservation reservation) {
+        reservationRepo.save(reservation);
+    }
 }

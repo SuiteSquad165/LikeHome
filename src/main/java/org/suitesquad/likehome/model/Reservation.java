@@ -38,12 +38,12 @@ public class Reservation {
     @Getter
     @Setter
     public static class Payment {
-        private double pointsUsed;
+        private int pointsUsed;
         private String paymentMethod;
         private String paymentStatus;
     }
 
-    public int calculatePointsEarned() {
-        return (int) (totalPrice - (payment.pointsUsed / 100));
+    public int calculatePointsGainedOrLost() {
+        return (int) (totalPrice - (payment.pointsUsed / 100.0)) - payment.pointsUsed;
     }
 }

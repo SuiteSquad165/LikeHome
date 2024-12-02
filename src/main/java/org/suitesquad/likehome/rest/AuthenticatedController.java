@@ -105,7 +105,7 @@ public class AuthenticatedController {
         reservation.setPayment(reservationInfo.payment());
 
         String id = reservationService.addReservationData(reservation).getId();
-        userService.updateUserPoints(user.getId(), reservation.calculatePointsEarned());
+        userService.updateUserPoints(user.getId(), user.getRewardPoints() + reservation.calculatePointsGainedOrLost());
         return id;
     }
 
@@ -128,6 +128,34 @@ public class AuthenticatedController {
                 reservation.getRoomId(),
                 reservation.getCheckIn(),
                 reservation.getCheckOut());
+    }
+
+    /**
+     * Cancel a reservation for this user.
+     *
+     * @return the penalty fee for cancelling the reservation, as a double
+     */
+    @DeleteMapping(path = "/reservations/{reservationId}")
+    public double cancelReservation(JwtAuthenticationToken token, @PathVariable String reservationId) {
+        Reservation reservation = reservationService.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' does not exist!"));
+        User user = userService.findById(getUserID(token))
+                .orElseThrow(() -> new RuntimeException("User not found in database"));
+        if (!reservation.getUserId().equals(user.getId())) {
+            throw new AccessDeniedException("Reservation '" + reservationId + "' does not belong to this user!");
+        }
+        Room room = roomService.findById(reservation.getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room '" + reservation.getRoomId() + "' not found"));
+        if (!room.getCancellationPolicy().isAllowed()) {
+            throw new RuntimeException("Cancellation not allowed for this reservation!");
+        }
+
+        reservation.setCancellationDate(new Date());
+        reservation.getPayment().setPaymentStatus("Refunded");
+        reservationService.save(reservation);
+        userService.updateUserPoints(user.getId(), user.getRewardPoints() - reservation.calculatePointsGainedOrLost());
+
+        return room.getCancellationPolicy().getPenaltyFee();
     }
 
     /**
