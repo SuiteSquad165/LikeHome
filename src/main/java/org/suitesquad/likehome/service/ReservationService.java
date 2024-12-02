@@ -50,6 +50,10 @@ public class ReservationService {
         return reservationRepo.findByUserIdAndHotelId(userId, hotelId);
     }
 
+    public void deleteById(String id) {
+        reservationRepo.deleteById(id);
+    }
+
     public void save(Reservation reservation) {
         reservationRepo.save(reservation);
     }

@@ -66,8 +66,8 @@ public class AuthenticatedController {
         return reservationService.findByUserId(getUserID(token)).stream()
                 .map(reservation -> new ReservationInfo(
                         reservation.getId(),
-                        reservation.getHotelId(),
                         reservation.getUserId(),
+                        reservation.getHotelId(),
                         reservation.getRoomId(),
                         reservation.getCheckIn(),
                         reservation.getCheckOut(),
@@ -88,9 +88,9 @@ public class AuthenticatedController {
     public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationRequest reservationInfo) {
         User user = userService.findById(getUserID(token))
                 .orElseThrow(() -> new RuntimeException("User not found in database"));
+
         reservationService.findByUserId(user.getId()).stream()
-                .filter(reservation -> reservation.getCheckIn().before(reservationInfo.checkOutDate()) &&
-                                       reservation.getCheckOut().after(reservationInfo.checkInDate()))
+                .filter(reservation -> reservationInfo.checkIn().before(reservation.getCheckOut()))
                 .findAny().ifPresent(reservation -> {
                     throw new RuntimeException("User already has a reservation for this time period");
                 });
@@ -101,8 +101,8 @@ public class AuthenticatedController {
         reservation.setUserId(user.getId());
         reservation.setHotelId(room.getHotelId());
         reservation.setRoomId(reservationInfo.roomId());
-        reservation.setCheckIn(reservationInfo.checkInDate());
-        reservation.setCheckOut(reservationInfo.checkOutDate());
+        reservation.setCheckIn(reservationInfo.checkIn());
+        reservation.setCheckOut(reservationInfo.checkOut());
         reservation.setTotalPrice(room.calculateTotalPrice(reservationInfo.nights()));
         reservation.setBookingDate(new Date());
         reservation.setPayment(reservationInfo.payment());
@@ -111,6 +111,7 @@ public class AuthenticatedController {
         userService.updateUserPoints(user.getId(), user.getRewardPoints() + reservation.calculatePointsGainedOrLost());
         return id;
     }
+
 
     /**
      * Get a specific reservation for this user by ID.
@@ -162,6 +163,30 @@ public class AuthenticatedController {
         userService.updateUserPoints(user.getId(), user.getRewardPoints() - reservation.calculatePointsGainedOrLost());
 
         return room.getCancellationPolicy().getPenaltyFee();
+    }
+
+    @PatchMapping(path = "/reservations/{reservationId}")
+    public void updateReservation(JwtAuthenticationToken token, @PathVariable String reservationId, @RequestBody ReservationRequest reservationInfo) {
+        Reservation reservation = reservationService.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' does not exist!"));
+        User user = userService.findById(getUserID(token))
+                .orElseThrow(() -> new RuntimeException("User not found in database"));
+        if (!reservation.getUserId().equals(user.getId())) {
+            throw new AccessDeniedException("Reservation '" + reservationId + "' does not belong to this user!");
+        }
+        Room room = roomService.findById(reservation.getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room '" + reservation.getRoomId() + "' not found"));
+
+        reservationService.findByUserId(user.getId()).stream()
+                .filter(res -> ((!res.getId().equalsIgnoreCase(reservationId)) && reservationInfo.checkIn().before(res.getCheckOut())))
+                .findAny().ifPresent(res -> {
+                    throw new RuntimeException("User already has a reservation for this time period");
+                });
+
+        reservation.setCheckIn(reservationInfo.checkIn());
+        reservation.setCheckOut(reservationInfo.checkOut());
+
+        reservationService.save(reservation);
     }
 
     /**
