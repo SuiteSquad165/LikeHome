@@ -20,9 +20,13 @@ public class RestTypes {
     public record ReservationRequest(String roomId, int nights, Reservation.Payment payment, Date checkIn,
                                      Date checkOut) {}
 
+    public record ReservationUpdate(Date checkIn, Date checkOut) {}
+
     public record ReservationInfo(String id, String userId, String hotelId, String roomId, Date checkIn,
                                   Date checkOut, double totalPrice, Reservation.Payment payment,
                                   boolean cancelled) {}
+
+    public record ReviewUpdate(String contents, double rating) {}
 
     public record ReviewInfo(String id, String firstName, String contents, double rating, Date reviewDate) {}
 
