@@ -85,7 +85,7 @@ public class AuthenticatedController {
     public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationRequest reservationInfo) {
         User user = userService.findById(getUserID(token))
                 .orElseThrow(() -> new RuntimeException("User not found in database"));
-        reservationService.findByUserId(getUserID(token)).stream()
+        reservationService.findByUserId(user.getId()).stream()
                 .filter(reservation -> reservation.getCheckIn().before(reservationInfo.checkOutDate()) &&
                                        reservation.getCheckOut().after(reservationInfo.checkInDate()))
                 .findAny().ifPresent(reservation -> {
@@ -94,18 +94,18 @@ public class AuthenticatedController {
         Room room = roomService.findById(reservationInfo.roomId())
                 .orElseThrow(() -> new RuntimeException("Room '" + reservationInfo.roomId() + "' not found"));
 
-        var reservationDetails = new Reservation();
-        reservationDetails.setUserId(getUserID(token));
-        reservationDetails.setHotelId(room.getHotelId());
-        reservationDetails.setRoomId(reservationInfo.roomId());
-        reservationDetails.setCheckIn(reservationInfo.checkInDate());
-        reservationDetails.setCheckOut(reservationInfo.checkOutDate());
-        reservationDetails.setTotalPrice(room.calculateTotalPrice(reservationInfo.nights()));
-        reservationDetails.setBookingDate(new Date());
-        reservationDetails.setPayment(reservationInfo.payment());
+        var reservation = new Reservation();
+        reservation.setUserId(user.getId());
+        reservation.setHotelId(room.getHotelId());
+        reservation.setRoomId(reservationInfo.roomId());
+        reservation.setCheckIn(reservationInfo.checkInDate());
+        reservation.setCheckOut(reservationInfo.checkOutDate());
+        reservation.setTotalPrice(room.calculateTotalPrice(reservationInfo.nights()));
+        reservation.setBookingDate(new Date());
+        reservation.setPayment(reservationInfo.payment());
 
-        String id = reservationService.addReservationData(reservationDetails).getId();
-        userService.updateUserPoints(user.getId(), reservationDetails.calculatePointsEarned());
+        String id = reservationService.addReservationData(reservation).getId();
+        userService.updateUserPoints(user.getId(), reservation.calculatePointsEarned());
         return id;
     }
 
