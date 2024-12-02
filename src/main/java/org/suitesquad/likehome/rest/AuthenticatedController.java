@@ -222,6 +222,23 @@ public class AuthenticatedController {
         reviewService.updateReviewData(review);
     }
 
+    @DeleteMapping("/hotels/{hotelId}/reviews")
+    public void deleteHotelReview(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo reviewInfo) {
+        hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
+
+        if (reservationService.findByUserIdAndHotelId(getUserID(token), hotelId).isEmpty()) {
+            throw new RuntimeException("User has not stayed at hotel '" + hotelId + "'");
+        }
+
+        Review review = reviewService.findByHotelIdAndUserId(hotelId, getUserID(token));
+        if(review == null){
+            throw new RuntimeException("User '" + getUserID(token) + "' has not left a review for hotel '" + hotelId + "'");
+        }
+
+        reviewService.deleteById(review.getId());
+    }
+
     /**
      * Respond to a user's chat message with a response from an AI assistant.
      *
