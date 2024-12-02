@@ -8,6 +8,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @SpringBootApplication
 @OpenAPIDefinition(
@@ -16,10 +19,16 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 )
 @SecurityScheme(type = SecuritySchemeType.HTTP, bearerFormat = "jwt", name = "bearerAuth", scheme = "bearer",
         in = SecuritySchemeIn.HEADER)
+@ControllerAdvice
 public class RestApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(RestApplication.class, args);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleException(RuntimeException e) {
+        return ResponseEntity.badRequest().body(e.toString());
     }
 
 }
