@@ -16,7 +16,7 @@ jobs:
       - name: Gradle build
         uses: gradle/gradle-build-action@v3
         with:
-          arguments: build --no-daemon --scan
+          arguments: build --no-daemon
         env:
           DB_URL: ${{ secrets.DB_URL }}
           DB_NAME: ${{ secrets.DB_NAME }}
