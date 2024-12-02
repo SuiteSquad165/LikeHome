@@ -25,7 +25,7 @@ public class RestTypes {
     public record ReservationInfo(String id, String hotelId, String userId, String roomId, Date checkInDate,
                                   Date checkOutDate) {}
 
-    public record ReviewInfo(String id, String userId, String contents, double rating, Date reviewDate) {}
+    public record ReviewInfo(String id, String firstName, String contents, double rating, Date reviewDate) {}
 
     public record ChatMessage(Sender sender, String content) {
         enum Sender {

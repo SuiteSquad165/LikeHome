@@ -11,6 +11,7 @@ import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
 import org.suitesquad.likehome.service.HotelService;
 import org.suitesquad.likehome.service.ReviewService;
 import org.suitesquad.likehome.service.RoomService;
+import org.suitesquad.likehome.service.UserService;
 
 import java.io.IOException;
 import java.net.URI;
@@ -36,6 +37,7 @@ public class PublicController {
     @Autowired private HotelService hotelService;
     @Autowired private RoomService roomService;
     @Autowired private ReviewService reviewService;
+    @Autowired private UserService userService;
 
     @GetMapping("/ping")
     public String ping() {
@@ -183,7 +185,7 @@ public class PublicController {
         return reviewService.findByHotelId(hotelId).stream()
                 .map(review -> new ReviewInfo(
                         review.getId(),
-                        review.getUserId(),
+                        userService.findById(review.getUserId()).get().getFirstName(),
                         review.getContents(),
                         review.getRating(),
                         review.getReviewDate()
