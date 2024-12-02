@@ -24,4 +24,13 @@ public class ReviewService {
     public Optional<Review> findById(String id) {
         return reviewRepository.findById(id);
     }
+
+    public Review findByHotelIdAndUserId(String hotelId, String userId)
+    {
+        return reviewRepository.findByHotelIdAndUserId(hotelId, userId);
+    }
+
+    public void updateReviewData(Review reviewDetails) {
+        reviewRepository.save(reviewDetails);
+    }
 }

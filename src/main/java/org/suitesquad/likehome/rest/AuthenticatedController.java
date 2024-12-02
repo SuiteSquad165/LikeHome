@@ -131,13 +131,17 @@ public class AuthenticatedController {
      * Updates an existing review if the user already reviewed the hotel.
      * Error if user has not stayed at the hotel.
      */
-    @PutMapping(path = "/hotels/{hotelId}/reviews")
+    @PostMapping(path = "/hotels/{hotelId}/reviews")
     public void reviewHotel(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo reviewInfo) {
         hotelService.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
         if (reservationService.findByUserIdAndHotelId(getUserID(token), hotelId).isEmpty()) {
             throw new RuntimeException("User has not stayed at hotel '" + hotelId + "'");
+        }
+
+        if(reviewService.findByHotelIdAndUserId(hotelId, getUserID(token)) != null){
+            throw new RuntimeException("User '" + getUserID(token) + "' already left a review for hotel '" + hotelId + "'");
         }
 
         var review = new Review();
@@ -147,13 +151,37 @@ public class AuthenticatedController {
                 review.setId(reviewInfo.id());
             }
         }
+
         review.setHotelId(hotelId);
         review.setUserId(getUserID(token));
         review.setRating(reviewInfo.rating());
         review.setContents(reviewInfo.contents());
         review.setReviewDate(reviewInfo.reviewDate());
 
-        reviewService.addReviewData(review); // TODO update if (review.getId() != null)
+        reviewService.addReviewData(review);
+    }
+
+    @PatchMapping("/hotels/{hotelId}/reviews")
+    public void updateReviewHotel(JwtAuthenticationToken token, @PathVariable String hotelId, @RequestBody ReviewInfo reviewInfo) {
+        hotelService.findById(hotelId)
+                .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
+
+        if (reservationService.findByUserIdAndHotelId(getUserID(token), hotelId).isEmpty()) {
+            throw new RuntimeException("User '" + getUserID(token) + "' has not stayed at hotel '" + hotelId + "'");
+        }
+
+        Review review = reviewService.findByHotelIdAndUserId(hotelId, getUserID(token));
+        if(review == null){
+            throw new RuntimeException("User '" + getUserID(token) + "' has not left a review for hotel '" + hotelId + "'");
+        }
+
+        review.setHotelId(hotelId);
+        review.setUserId(getUserID(token));
+        review.setRating(reviewInfo.rating());
+        review.setContents(reviewInfo.contents());
+        review.setReviewDate(reviewInfo.reviewDate());
+
+        reviewService.updateReviewData(review);
     }
 
     /**
