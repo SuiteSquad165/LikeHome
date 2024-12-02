@@ -87,15 +87,19 @@ public class AuthenticatedController {
     @PostMapping(path = "/reservations")
     public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationRequest reservationInfo) {
         User user = userService.findById(getUserID(token))
-                .orElseThrow(() -> new RuntimeException("User not found in database"));
-
+                .orElseThrow(() -> new IllegalStateException("User not found in database"));
+        if (reservationInfo.checkIn().after(reservationInfo.checkOut())) {
+            throw new IllegalArgumentException("Check-in date must be before check-out date");
+        }
         reservationService.findByUserId(user.getId()).stream()
-                .filter(reservation -> reservationInfo.checkIn().before(reservation.getCheckOut()))
+                .filter(reservation -> reservation.getCheckIn().before(reservationInfo.checkOut()) &&
+                                       reservation.getCheckOut().after(reservationInfo.checkIn()))
                 .findAny().ifPresent(reservation -> {
-                    throw new RuntimeException("User already has a reservation for this time period");
+                    throw new IllegalArgumentException("User already has a reservation for this time period");
                 });
         Room room = roomService.findById(reservationInfo.roomId())
-                .orElseThrow(() -> new RuntimeException("Room '" + reservationInfo.roomId() + "' not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Room '" + reservationInfo.roomId() + "' not found"));
+
 
         var reservation = new Reservation();
         reservation.setUserId(user.getId());
@@ -107,11 +111,14 @@ public class AuthenticatedController {
         reservation.setBookingDate(new Date());
         reservation.setPayment(reservationInfo.payment());
 
+        int userPointsAfterReservation = user.getRewardPoints() + reservation.calculatePointsGainedOrLost();
+        if (userPointsAfterReservation < 0) {
+            throw new RuntimeException("User does not have enough points to make this reservation");
+        }
         String id = reservationService.addReservationData(reservation).getId();
-        userService.updateUserPoints(user.getId(), user.getRewardPoints() + reservation.calculatePointsGainedOrLost());
+        userService.updateUserPoints(user.getId(), userPointsAfterReservation);
         return id;
     }
-
 
     /**
      * Get a specific reservation for this user by ID.
@@ -165,22 +172,27 @@ public class AuthenticatedController {
         return room.getCancellationPolicy().getPenaltyFee();
     }
 
+    /**
+     * Update the check in or check out date for a reservation.
+     */
     @PatchMapping(path = "/reservations/{reservationId}")
     public void updateReservation(JwtAuthenticationToken token, @PathVariable String reservationId, @RequestBody ReservationRequest reservationInfo) {
         Reservation reservation = reservationService.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Reservation '" + reservationId + "' does not exist!"));
+                .orElseThrow(() -> new IllegalArgumentException("Reservation '" + reservationId + "' does not exist!"));
         User user = userService.findById(getUserID(token))
-                .orElseThrow(() -> new RuntimeException("User not found in database"));
+                .orElseThrow(() -> new IllegalStateException("User not found in database"));
         if (!reservation.getUserId().equals(user.getId())) {
             throw new AccessDeniedException("Reservation '" + reservationId + "' does not belong to this user!");
         }
-        Room room = roomService.findById(reservation.getRoomId())
-                .orElseThrow(() -> new RuntimeException("Room '" + reservation.getRoomId() + "' not found"));
+        if (reservationInfo.checkIn().after(reservationInfo.checkOut())) {
+            throw new IllegalArgumentException("Check-in date must be before check-out date");
+        }
 
         reservationService.findByUserId(user.getId()).stream()
-                .filter(res -> ((!res.getId().equalsIgnoreCase(reservationId)) && reservationInfo.checkIn().before(res.getCheckOut())))
+                .filter(res -> res.getCheckIn().before(reservationInfo.checkOut()) &&
+                               res.getCheckOut().after(reservationInfo.checkIn()))
                 .findAny().ifPresent(res -> {
-                    throw new RuntimeException("User already has a reservation for this time period");
+                    throw new IllegalArgumentException("User already has a reservation for this time period");
                 });
 
         reservation.setCheckIn(reservationInfo.checkIn());
@@ -203,7 +215,7 @@ public class AuthenticatedController {
             throw new RuntimeException("User has not stayed at hotel '" + hotelId + "'");
         }
 
-        if(reviewService.findByHotelIdAndUserId(hotelId, getUserID(token)) != null){
+        if (reviewService.findByHotelIdAndUserId(hotelId, getUserID(token)) != null) {
             throw new RuntimeException("User '" + getUserID(token) + "' already left a review for hotel '" + hotelId + "'");
         }
 
@@ -234,7 +246,7 @@ public class AuthenticatedController {
         }
 
         Review review = reviewService.findByHotelIdAndUserId(hotelId, getUserID(token));
-        if(review == null){
+        if (review == null) {
             throw new RuntimeException("User '" + getUserID(token) + "' has not left a review for hotel '" + hotelId + "'");
         }
 
@@ -257,7 +269,7 @@ public class AuthenticatedController {
         }
 
         Review review = reviewService.findByHotelIdAndUserId(hotelId, getUserID(token));
-        if(review == null){
+        if (review == null) {
             throw new RuntimeException("User '" + getUserID(token) + "' has not left a review for hotel '" + hotelId + "'");
         }
 
