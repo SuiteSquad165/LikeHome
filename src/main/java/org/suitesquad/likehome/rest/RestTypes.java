@@ -17,11 +17,11 @@ public class RestTypes {
 
     // just using model.Room in API to avoid duplicating the fields
 
-    public record ReservationRequest(String roomId, int nights, Reservation.Payment payment, Date checkInDate,
-                                     Date checkOutDate) {}
+    public record ReservationRequest(String roomId, int nights, Reservation.Payment payment, Date checkIn,
+                                     Date checkOut) {}
 
-    public record ReservationInfo(String id, String userId, String hotelId, String roomId, Date checkInDate,
-                                  Date checkOutDate, double totalPrice, Reservation.Payment payment,
+    public record ReservationInfo(String id, String userId, String hotelId, String roomId, Date checkIn,
+                                  Date checkOut, double totalPrice, Reservation.Payment payment,
                                   boolean cancelled) {}
 
     public record ReviewInfo(String id, String firstName, String contents, double rating, Date reviewDate) {}
