@@ -7,12 +7,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.Reservation;
 import org.suitesquad.likehome.model.Review;
+import org.suitesquad.likehome.model.Room;
 import org.suitesquad.likehome.model.User;
 import org.suitesquad.likehome.rest.RestTypes.*;
-import org.suitesquad.likehome.service.HotelService;
-import org.suitesquad.likehome.service.ReservationService;
-import org.suitesquad.likehome.service.ReviewService;
-import org.suitesquad.likehome.service.UserService;
+import org.suitesquad.likehome.service.*;
 
 import java.util.*;
 
@@ -30,6 +28,7 @@ public class AuthenticatedController {
     @Autowired private ReservationService reservationService;
     @Autowired private HotelService hotelService;
     @Autowired private ReviewService reviewService;
+    @Autowired private RoomService roomService;
 
     /**
      * Creates a user in the database with the email and name from the SignUpInfo object
@@ -84,24 +83,29 @@ public class AuthenticatedController {
      */
     @PostMapping(path = "/reservations")
     public String createReservation(JwtAuthenticationToken token, @RequestBody ReservationRequest reservationInfo) {
+        User user = userService.findById(getUserID(token))
+                .orElseThrow(() -> new RuntimeException("User not found in database"));
         reservationService.findByUserId(getUserID(token)).stream()
                 .filter(reservation -> reservation.getCheckIn().before(reservationInfo.checkOutDate()) &&
                                        reservation.getCheckOut().after(reservationInfo.checkInDate()))
                 .findAny().ifPresent(reservation -> {
                     throw new RuntimeException("User already has a reservation for this time period");
                 });
+        Room room = roomService.findById(reservationInfo.roomId())
+                .orElseThrow(() -> new RuntimeException("Room '" + reservationInfo.roomId() + "' not found"));
 
         var reservationDetails = new Reservation();
         reservationDetails.setUserId(getUserID(token));
-        reservationDetails.setHotelId(reservationInfo.hotelId());
+        reservationDetails.setHotelId(room.getHotelId());
         reservationDetails.setRoomId(reservationInfo.roomId());
         reservationDetails.setCheckIn(reservationInfo.checkInDate());
         reservationDetails.setCheckOut(reservationInfo.checkOutDate());
+        reservationDetails.setTotalPrice(room.calculateTotalPrice(reservationInfo.nights()));
+        reservationDetails.setBookingDate(new Date());
+        reservationDetails.setPayment(reservationInfo.payment());
 
         String id = reservationService.addReservationData(reservationDetails).getId();
-        userService.findById(getUserID(token)).ifPresent(user ->
-                userService.updateUserPoints(user.getId(), user.getRewardPoints() + 10)
-        );
+        userService.updateUserPoints(user.getId(), reservationDetails.calculatePointsEarned());
         return id;
     }
 

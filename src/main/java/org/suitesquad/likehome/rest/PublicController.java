@@ -5,11 +5,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.suitesquad.likehome.model.Hotel;
-import org.suitesquad.likehome.model.Review;
 import org.suitesquad.likehome.model.Room;
 import org.suitesquad.likehome.rest.RestTypes.HotelInfo;
 import org.suitesquad.likehome.rest.RestTypes.ReviewInfo;
-import org.suitesquad.likehome.rest.RestTypes.RoomInfo;
 import org.suitesquad.likehome.service.HotelService;
 import org.suitesquad.likehome.service.ReviewService;
 import org.suitesquad.likehome.service.RoomService;
@@ -19,7 +17,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Predicate;
@@ -135,7 +132,7 @@ public class PublicController {
      * @param maxPrice    maximum price per night
      */
     @GetMapping("/hotels/{hotelId}/rooms")
-    public List<RoomInfo> getHotelRooms(@PathVariable String hotelId,
+    public List<Room> getHotelRooms(@PathVariable String hotelId,
                                         @RequestParam(required = false) String sort,
                                         @RequestParam(required = false) String name,
                                         @RequestParam(defaultValue = "0") Integer minBaths,
@@ -162,18 +159,7 @@ public class PublicController {
                 .filter(room -> room.getPricePerNight() >= minPrice)
                 .filter(maxPrice == null ? noFilter()
                         : room -> room.getPricePerNight() <= maxPrice)
-                .map(room -> new RoomInfo(
-                        room.getId(),
-                        room.getName(),
-                        room.getBaths(),
-                        room.getBeds(),
-                        room.getGuests(),
-                        room.getBedrooms(),
-                        room.getDescription(),
-                        room.getPricePerNight(),
-                        room.getAmenities(),
-                        room.getImageUrls()
-                )).toList();
+                .toList();
     }
 
     private static <T> Predicate<T> noFilter() { // for when no filter is applied
@@ -181,24 +167,12 @@ public class PublicController {
     }
 
     @GetMapping("/hotels/{hotelId}/rooms/{roomId}")
-    public RoomInfo getHotelRoomById(@PathVariable String hotelId, @PathVariable String roomId) {
+    public Room getHotelRoomById(@PathVariable String hotelId, @PathVariable String roomId) {
         hotelService.findById(hotelId)
                 .orElseThrow(() -> new RuntimeException("Hotel '" + hotelId + "' not found"));
 
-        Room room = roomService.findById(roomId)
+        return roomService.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room '" + roomId + "' not found"));
-        return new RoomInfo(
-                room.getId(),
-                room.getName(),
-                room.getBaths(),
-                room.getBeds(),
-                room.getGuests(),
-                room.getBedrooms(),
-                room.getDescription(),
-                room.getPricePerNight(),
-                room.getAmenities(),
-                room.getImageUrls()
-        );
     }
 
     @GetMapping("/hotels/{hotelId}/reviews")

@@ -24,7 +24,26 @@ public class Room {
     private int bedrooms;
     private String description;
     private double pricePerNight;
+    private double cleaningFee;
+    private double serviceFee;
+    /**
+     * Tax rate as a decimal (0.1 for 10%).
+     * To calculate total: total = ((pricePerNight * nights) + cleaningFee + serviceFee) * (1 + taxRate)
+     */
+    private double taxRate;
     private int availability;
     private List<String> imageUrls;
     private List<String> amenities;
+    private CancellationPolicy cancellationPolicy;
+
+    @Getter
+    @Setter
+    public static class CancellationPolicy {
+        private boolean allowed;
+        private double penaltyFee;
+    }
+
+    public double calculateTotalPrice(int nights) {
+        return ((pricePerNight * nights) + cleaningFee + serviceFee) * (1 + taxRate);
+    }
 }

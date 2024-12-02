@@ -7,7 +7,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
-import java.util.List;
 
 @Document("reservations")
 @Getter
@@ -26,39 +25,25 @@ public class Reservation {
     //@Indexed
     private String roomId;
 
-    private List<RoomBooked> roomsBooked;
     private Date checkIn;
     private Date checkOut;
     private double totalPrice;
-    /**
-     * True if booked, false if cancelled
-     */
-    private boolean status;
     private Date bookingDate;
     private Payment payment;
-    private CancellationPolicy cancellationPolicy;
-
-    @Getter
-    @Setter
-    public static class RoomBooked {
-        private String roomType;
-        private double price;
-        private int quantity;
-    }
+    /**
+     * null if reservation is not cancelled
+     */
+    private Date cancellationDate;
 
     @Getter
     @Setter
     public static class Payment {
+        private double pointsUsed;
         private String paymentMethod;
         private String paymentStatus;
-        private Date paymentDate;
     }
 
-    @Getter
-    @Setter
-    public static class CancellationPolicy {
-        private boolean allowed;
-        private double penaltyFee;
-        private Date lastCancellationDate;
+    public int calculatePointsEarned() {
+        return (int) (totalPrice - (payment.pointsUsed / 100));
     }
 }
