@@ -8,8 +8,6 @@ import java.util.List;
 /**
  * This class contains the response types for the REST API.
  * All these records are to be serialized to JSON. They are not used in the database.
- * <p>
- * There is a sample of each record in the class definition, for testing purposes.
  */
 public class RestTypes {
     public record SignUpInfo(String email, String firstName, String lastName) {}
@@ -22,8 +20,9 @@ public class RestTypes {
     public record ReservationRequest(String roomId, int nights, Reservation.Payment payment, Date checkInDate,
                                      Date checkOutDate) {}
 
-    public record ReservationInfo(String id, String hotelId, String userId, String roomId, Date checkInDate,
-                                  Date checkOutDate) {}
+    public record ReservationInfo(String id, String userId, String hotelId, String roomId, Date checkInDate,
+                                  Date checkOutDate, double totalPrice, Reservation.Payment payment,
+                                  boolean cancelled) {}
 
     public record ReviewInfo(String id, String firstName, String contents, double rating, Date reviewDate) {}
 

@@ -70,7 +70,10 @@ public class AuthenticatedController {
                         reservation.getUserId(),
                         reservation.getRoomId(),
                         reservation.getCheckIn(),
-                        reservation.getCheckOut()))
+                        reservation.getCheckOut(),
+                        reservation.getTotalPrice(),
+                        reservation.getPayment(),
+                        reservation.getCancellationDate() != null))
                 .toList();
     }
 
@@ -127,7 +130,10 @@ public class AuthenticatedController {
                 reservation.getUserId(),
                 reservation.getRoomId(),
                 reservation.getCheckIn(),
-                reservation.getCheckOut());
+                reservation.getCheckOut(),
+                reservation.getTotalPrice(),
+                reservation.getPayment(),
+                reservation.getCancellationDate() != null);
     }
 
     /**
